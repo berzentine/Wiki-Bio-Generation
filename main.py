@@ -19,6 +19,7 @@ data_path = args.data
     # Check and Set Cuda
     # Load Data and Tokenize it
 ###############################################################################
+print("Load embedding")
 emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
 #w2v_vocab, emb_vec = torchwordemb.load_word2vec_bin(emb_path)
 
@@ -34,3 +35,13 @@ corpus = data.Corpus(data_path)
 #Use: table: corpus.train[i].box, bio: corpus.train[i].sent
 #Sentence are \n seprated and box is \t seprated
 print 'Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test)
+
+###############################################################################
+# TODO: Bachify
+###############################################################################
+
+###############################################################################
+# TODO: Build Model
+# Train Model
+# Test Model
+###############################################################################

@@ -71,18 +71,90 @@ class Corpus(object):
                     self.dictionary.add_word(p)
             content = t.sent.split('\n')
             for c in content:
-                words = c.split() + ['<eos>']
+                words = c.split(' ') + ['<eos>']
+                tokens += len(words)
+                for word in words:
+                    self.dictionary.add_word(word)
+
+        for t in self.val:
+            content = t.box.split('\t')
+            for c in content:
+                parts = c.split(":")
+                for p in parts:
+                    tokens += 1
+                    self.dictionary.add_word(p)
+            content = t.sent.split('\n')
+            for c in content:
+                words = c.split(' ') + ['<eos>']
+                tokens += len(words)
+                for word in words:
+                    self.dictionary.add_word(word)
+
+        for t in self.test:
+            content = t.box.split('\t')
+            for c in content:
+                parts = c.split(":")
+                for p in parts:
+                    tokens += 1
+                    self.dictionary.add_word(p)
+            content = t.sent.split('\n')
+            for c in content:
+                words = c.split(' ') + ['<eos>']
                 tokens += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
 
         # Tokenize file
-        # TODO
+        for t in self.train:
+            content = t.box.split('\t')
+            for c in range(0,len(content)):
+                parts = content[c].split(":")
+                for p in range(0,len(parts)):
+                    parts[p] = str(self.dictionary.word2idx[parts[p]])
+                content[c] = ':'.join(parts)
+            t.box = '\t'.join(content)
 
+            content = t.sent.split('\n')
+            for c in range(0,len(content)):
+                words = content[c].split(' ') + ['<eos>']
+                for word in range(0,len(words)):
+                    words[word] = str(self.dictionary.word2idx[words[word]])
+                content[c] = ' '.join(words)
+            t.sent = '\n'.join(content)
 
+        for t in self.val:
+            content = t.box.split('\t')
+            for c in range(0,len(content)):
+                parts = content[c].split(":")
+                for p in range(0,len(parts)):
+                    parts[p] = str(self.dictionary.word2idx[parts[p]])
+                content[c] = ':'.join(parts)
+            t.box = '\t'.join(content)
 
+            content = t.sent.split('\n')
+            for c in range(0,len(content)):
+                words = content[c].split(' ') + ['<eos>']
+                for word in range(0,len(words)):
+                    words[word] = str(self.dictionary.word2idx[words[word]])
+                content[c] = ' '.join(words)
+            t.sent = '\n'.join(content)
 
+        for t in self.test:
+            content = t.box.split('\t')
+            for c in range(0,len(content)):
+                parts = content[c].split(":")
+                for p in range(0,len(parts)):
+                    parts[p] = str(self.dictionary.word2idx[parts[p]])
+                content[c] = ':'.join(parts)
+            t.box = '\t'.join(content)
 
+            content = t.sent.split('\n')
+            for c in range(0,len(content)):
+                words = content[c].split(' ') + ['<eos>']
+                for word in range(0,len(words)):
+                    words[word] = str(self.dictionary.word2idx[words[word]])
+                content[c] = ' '.join(words)
+            t.sent = '\n'.join(content)
 
 
 

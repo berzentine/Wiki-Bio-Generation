@@ -30,5 +30,5 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data.Corpus(data_path) #Use: table: corpus.train[i].box, who bio: corpus.train[i].sent
+corpus = data.Corpus(data_path) #Use: table: corpus.train[i].box, bio: corpus.train[i].sent
 print 'Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test)

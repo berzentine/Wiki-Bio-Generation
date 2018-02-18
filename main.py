@@ -5,10 +5,11 @@ import data as data
 ###############################################################################
 # Parse command line arguments
 ###############################################################################
+
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=True, help='use CUDA')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--data', type=str, default='./Wiki-Data',help='location of the data corpus')
+parser.add_argument('--data', type=str, default='./Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 args = parser.parse_args()
 cuda = args.cuda
 seed = args.seed
@@ -34,7 +35,7 @@ print("Load data")
 corpus = data.Corpus(data_path)
 #Use: table: corpus.train[i].box, bio: corpus.train[i].sent
 #Sentence are \n seprated and box is \t seprated
-print 'Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test)
+print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test))
 
 ###############################################################################
 # TODO: Bachify

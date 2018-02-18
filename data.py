@@ -60,6 +60,7 @@ class Corpus(object):
 
     # Function to have a common dictionary for tables and biography texts
     def tokenize_common(self):
+        self.dictionary.add_word('<pad>')
         # Add words to the dictionary
         tokens = 0
         for t in self.train:

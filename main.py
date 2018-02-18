@@ -45,7 +45,8 @@ print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(
 # TODO: Stacking
 ###############################################################################
 train_box, train_sent, val_box, val_sent, test_box, test_sent = batchify(corpus)
-train_box, train_sent, val_box, val_sent, test_box, test_sent = pad_collate(train_box, train_sent, val_box, val_sent, test_box, test_sent)
+train_box, train_sent, val_box, val_sent, test_box, test_sent = pad_collate(train_box, train_sent, val_box, val_sent, test_box, test_sent, batchsize)
+#print train_box, train_sent
 ###############################################################################
 # TODO: Build Model
 # Train Model

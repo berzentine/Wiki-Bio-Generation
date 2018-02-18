@@ -9,7 +9,7 @@ import data as data
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=True, help='use CUDA')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--data', type=str, default='./Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
+parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 args = parser.parse_args()
 cuda = args.cuda
 seed = args.seed

@@ -1,6 +1,7 @@
 import torch.nn as nn
 from torch.autograd import Variable
-from BiLSTMEncoder import BiLSTMEncoder
+#from BiLSTMEncoder import BiLSTMEncoder
+from models.BiLSTMEncoder import BiLSTMEncoder as BiLSTMEncoder
 
 class ConditionedLM(nn.Module):
     def __init__(self, dropout, vocab_size, embed_size, num_layers, hidden_size):

@@ -12,20 +12,22 @@ class BiLSTMEncoder(nn.Module):
         super(BiLSTMEncoder, self).__init__()
         self.vocab_size = vocab_size
         self.embed_size = embed_size
+        self.hidden_dim = hidden_size
+        self.num_layers = num_layers
         self.embed = nn.Embedding(self.vocab_size, self.embed_size)
 
-        self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=hidden_size, num_layers=num_layers, bidirectional=True, batch_first=True)
+        self.biLSTM = nn.LSTM(input_size=self.embed_size, hidden_size=hidden_size//2, num_layers=num_layers, bidirectional=True, batch_first=True)
 
-        self.initialize_weights()
+        #self.initialize_weights()
 
-    def forward(self, input, hidden, lengths):
+    def forward(self, input, hidden):
         emdout = self.embed(input)
         out, hidden = self.biLSTM(emdout, hidden)
         #out = out.contiguous()
         return out, hidden
 
-    def init_hidden(self, num_layers, batch_size, hidden_dim):
+    def init_hidden(self, batch_size):
         weight = next(self.parameters()).data
-        return (autograd.Variable(weight.new(num_layers, batch_size, 2*hidden_dim).zero_()),
-                                   autograd.Variable(weight.new(num_layers, batch_size, 2*hidden_dim).zero_()))
+        return (autograd.Variable(weight.new(2*self.num_layers, batch_size, self.hidden_dim//2).zero_()),
+                                   autograd.Variable(weight.new(2*self.num_layers, batch_size, self.hidden_dim//2).zero_()))
         #return autograd.Variable(weight.new(num_layers, batch_size, hidden_dim).zero_())

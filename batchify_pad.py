@@ -53,7 +53,6 @@ def batchify(corpus):
 
     return train_box, train_sent, val_box, val_sent, test_box, test_sent
 def pad_collate(datum,batchsize):
-    batchsize = 3
     train =  sorted(zip(datum[1],datum[0]), key=lambda pair: len(pair[0]))
     train_box = []
     train_sent = []

@@ -16,7 +16,7 @@ from torch.autograd import Variable
 ###############################################################################
 
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
-parser.add_argument('--cuda', action='store_true', default=True, help='use CUDA')
+parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.1,help='learning rate')
@@ -24,7 +24,7 @@ parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biog
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
 parser.add_argument('--emsize', type=int, default=200,help='size of word embeddings')
-parser.add_argument('--nlayers', type=int, default=2,help='number of layers')
+parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
 parser.add_argument('--nhid', type=int, default=200,help='number of hidden units per layer')
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
@@ -84,7 +84,7 @@ test_box, test_sent, test_box_length, test_sent_length = pad_collate((test_box, 
 
 
 
-def get_targets(source, evaluation=False):
+def get_targets(source, box_batch, evaluation=False):
     batch = source
 
     data = batch[:, 0:batch.size(1)-1]
@@ -95,9 +95,12 @@ def get_targets(source, evaluation=False):
         data = data.cuda()
     if cuda:
         target = target.cuda()
+    if cuda:
+        box_batch = box_batch.cuda()
     data = Variable(data, volatile=evaluation)
     target = Variable(target)
-    return data, target
+    box_batch = Variable(box_batch)
+    return data, target, box_batch
 
 
 vocab_size = len(corpus.dictionary)
@@ -125,18 +128,20 @@ def train():
     total_loss = 0
     total_words = 0
     batch_loss = batch_words = i = 0
-    initial_lm_hidden = model.init_hidden(num_layers, batchsize, hidden_size)
-    initial_encoder_hidden = model.table_encoder.init_hidden(num_layers=num_layers, batch_size=batchsize, hidden_dim=hidden_size//2)
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(train_box, train_sent, train_box_length, train_sent_length):
         i+=1
-        data, targets = get_targets(sent_batch, False)
+        data, targets, box_batch = get_targets(sent_batch, box_batch, False)
+        initial_lm_hidden = model.init_hidden(list(data.size())[0])
+        initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
+        # print data
+        # print box_batch
         output, hidden = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)
         batch_loss += loss.data
         batch_words += sum(sent_length_batch)
-        hidden = repackage_hidden(hidden)
+        #hidden = repackage_hidden(hidden)
         optimizer.zero_grad()
         loss.backward()
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
@@ -161,15 +166,15 @@ def evaluate(data_source_box, data_source_sent, data_source_box_lengths, data_so
     start_time = time.time()
     total_loss = 0
     total_words = 0
-    initial_lm_hidden = model.init_hidden(num_layers, batchsize, hidden_size)
-    initial_encoder_hidden = model.table_encoder.init_hidden(num_layers=num_layers, batch_size=batchsize, hidden_dim=hidden_size//2)
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(data_source_box, data_source_sent, data_source_box_lengths, data_source_sent_lengths):
-        data, targets = get_targets(sent_batch, True)
+        data, targets, box_batch = get_targets(sent_batch, box_batch, True)
+        initial_lm_hidden = model.init_hidden(list(data.size())[0])
+        initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
         output, hidden = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)
-        hidden = repackage_hidden(hidden)
+        #hidden = repackage_hidden(hidden)
     return total_loss[0]/total_words
 
 best_val_loss = None

@@ -129,7 +129,7 @@ def train():
     initial_encoder_hidden = model.table_encoder.init_hidden(num_layers=num_layers, batch_size=batchsize, hidden_dim=hidden_size//2)
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(train_box, train_sent, train_box_length, train_sent_length):
         i+=1
-        data, targets = get_targets(sent_batch)
+        data, targets = get_targets(sent_batch, False)
         output, hidden = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
@@ -164,7 +164,7 @@ def evaluate(data_source_box, data_source_sent, data_source_box_lengths, data_so
     initial_lm_hidden = model.init_hidden(num_layers, batchsize, hidden_size)
     initial_encoder_hidden = model.table_encoder.init_hidden(num_layers=num_layers, batch_size=batchsize, hidden_dim=hidden_size//2)
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(data_source_box, data_source_sent, data_source_box_lengths, data_source_sent_lengths):
-        data, targets = get_targets(sent_batch)
+        data, targets = get_targets(sent_batch, True)
         output, hidden = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data

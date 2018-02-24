@@ -1,6 +1,5 @@
 import torch
 import torch.autograd as autograd
-from model.GruCustom import GruCustom
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim

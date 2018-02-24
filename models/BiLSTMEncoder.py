@@ -27,6 +27,6 @@ class BiLSTMEncoder(nn.Module):
 
     def init_hidden(self, num_layers, batch_size, hidden_dim):
         weight = next(self.parameters()).data
-        return (autograd.Variable(weight.new(num_layers, batch_size, hidden_dim).zero_()),
-                                   autograd.Variable(weight.new(num_layers, batch_size, hidden_dim).zero_()))
+        return (autograd.Variable(weight.new(num_layers, batch_size, 2*hidden_dim).zero_()),
+                                   autograd.Variable(weight.new(num_layers, batch_size, 2*hidden_dim).zero_()))
         #return autograd.Variable(weight.new(num_layers, batch_size, hidden_dim).zero_())

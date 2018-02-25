@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import data_handler as data_handler
 from batchify_pad import batchify, pad_collate
+from models.LSTMLM import RNNModel
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
@@ -48,9 +49,9 @@ clip = args.clip
 log_interval = args.log_interval
 ###############################################################################
 # Code Setup
-    # TODO: Load and make embeddings vector
-    # Check and Set Cuda
-    # Load Data and Tokenize it
+# TODO: Load and make embeddings vector
+# Check and Set Cuda
+# Load Data and Tokenize it
 ###############################################################################
 print("Load embedding")
 emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
@@ -104,7 +105,7 @@ def get_targets(source, box_batch, evaluation=False):
 
 
 vocab_size = len(corpus.dictionary)
-model = ConditionedLM(dropout=dropout, vocab_size=vocab_size, embed_size=emb_size, num_layers=num_layers, lm_hidden_size=hidden_size, encoder_hidden_size=hidden_size)
+model = RNNModel(dropout=dropout, vocab_size=vocab_size, input_dim=emb_size, num_layers=num_layers, hidden_size=hidden_size)
 if args.cuda:
     model.cuda()
 
@@ -132,10 +133,7 @@ def train():
         i+=1
         data, targets, box_batch = get_targets(sent_batch, box_batch, False)
         initial_lm_hidden = model.init_hidden(list(data.size())[0])
-        initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
-        # print data
-        # print box_batch
-        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
+        output = model.forward(data, initial_lm_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)
@@ -169,8 +167,7 @@ def evaluate(data_source_box, data_source_sent, data_source_box_lengths, data_so
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(data_source_box, data_source_sent, data_source_box_lengths, data_source_sent_lengths):
         data, targets, box_batch = get_targets(sent_batch, box_batch, True)
         initial_lm_hidden = model.init_hidden(list(data.size())[0])
-        initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
-        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
+        output = model.forward(data, initial_lm_hidden)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)

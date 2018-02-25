@@ -16,10 +16,10 @@ from torch.autograd import Variable
 ###############################################################################
 
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
-parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
+parser.add_argument('--cuda', action='store_true', default=True, help='use CUDA')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
-parser.add_argument('--lr', type=int, default=0.1,help='learning rate')
+parser.add_argument('--lr', type=float, default=0.1,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
@@ -28,7 +28,7 @@ parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
 parser.add_argument('--nhid', type=int, default=100,help='number of hidden units per layer')
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
-parser.add_argument('--log_interval', type=float, default=500,help='log interval')
+parser.add_argument('--log_interval', type=int, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
 
 args = parser.parse_args()
@@ -157,6 +157,7 @@ def train():
             batch_loss = 0
             batch_words = 0
             start_time = time.time()
+        del sent_batch, box_batch, data, targets, output
     train_losses.append(total_loss[0]/total_words)
 
 
@@ -196,9 +197,9 @@ try:
             with open(model_save_path, 'wb') as f:
                 torch.save(model, f)
             best_val_loss = val_loss
-            #else:
+        else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
-            #lr /= 2
+            lr /= 2
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')

@@ -72,7 +72,7 @@ class Corpus(object):
                     self.dictionary.add_word(p)
             content = t.sent.split('\n')
             for c in content:
-                words = c.split(' ') + ['<eos>']
+                words = ['<sos>'] + c.split(' ') + ['<eos>']
                 tokens += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
@@ -86,7 +86,7 @@ class Corpus(object):
                     self.dictionary.add_word(p)
             content = t.sent.split('\n')
             for c in content:
-                words = c.split(' ') + ['<eos>']
+                words = ['<sos>'] + c.split(' ') + ['<eos>']
                 tokens += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
@@ -100,7 +100,7 @@ class Corpus(object):
                     self.dictionary.add_word(p)
             content = t.sent.split('\n')
             for c in content:
-                words = c.split(' ') + ['<eos>']
+                words = ['<sos>'] + c.split(' ') + ['<eos>']
                 tokens += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
@@ -117,7 +117,7 @@ class Corpus(object):
 
             content = t.sent.split('\n')
             for c in range(0,len(content)):
-                words = content[c].split(' ') + ['<eos>']
+                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
                 for word in range(0,len(words)):
                     words[word] = str(self.dictionary.word2idx[words[word]])
                 content[c] = ' '.join(words)
@@ -134,7 +134,7 @@ class Corpus(object):
 
             content = t.sent.split('\n')
             for c in range(0,len(content)):
-                words = content[c].split(' ') + ['<eos>']
+                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
                 for word in range(0,len(words)):
                     words[word] = str(self.dictionary.word2idx[words[word]])
                 content[c] = ' '.join(words)
@@ -151,7 +151,7 @@ class Corpus(object):
 
             content = t.sent.split('\n')
             for c in range(0,len(content)):
-                words = content[c].split(' ') + ['<eos>']
+                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
                 for word in range(0,len(words)):
                     words[word] = str(self.dictionary.word2idx[words[word]])
                 content[c] = ' '.join(words)

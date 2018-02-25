@@ -25,8 +25,10 @@ class ConditionedLM(nn.Module):
         self.decoder.bias.data.fill_(0)
         self.decoder.weight.data.uniform_(-initrange,initrange)
 
-    def forward(self, x, table, initial_lm_hidden, initial_encoder_hidden):
+    def forward(self, x, table, initial_lm_hidden, initial_encoder_hidden, gen_flag):
         encoded = self.encoder(x)
+        if gen_flag:
+            encoded = encoded.unsqueeze(0)
         table_encoded, table_hidden = self.table_encoder(table, initial_encoder_hidden)
         hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
         new_hidden = []
@@ -38,6 +40,8 @@ class ConditionedLM(nn.Module):
             new_out.append(torch.squeeze(out))
         output = torch.stack(new_out, dim=0)
         output = output.contiguous()
+        if gen_flag:
+            output = output.unsqueeze(0)
         decoded = self.decoder(output.view(output.size(0)*output.size(1), output.size(2)))
         return decoded.view(output.size(0), output.size(1), decoded.size(1))
 

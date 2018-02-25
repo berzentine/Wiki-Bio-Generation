@@ -135,7 +135,7 @@ def train():
         initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
         # print data
         # print box_batch
-        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
+        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden, False)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)
@@ -170,7 +170,7 @@ def evaluate(data_source_box, data_source_sent, data_source_box_lengths, data_so
         data, targets, box_batch = get_targets(sent_batch, box_batch, True)
         initial_lm_hidden = model.init_hidden(list(data.size())[0])
         initial_encoder_hidden = model.table_encoder.init_hidden(list(box_batch.size())[0])
-        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden)
+        output = model.forward(data, box_batch, initial_lm_hidden, initial_encoder_hidden, False)
         loss = criterion(output.view(-1, vocab_size), targets.view(-1))
         total_loss += loss.data
         total_words += sum(sent_length_batch)

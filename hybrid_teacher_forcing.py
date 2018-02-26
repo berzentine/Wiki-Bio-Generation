@@ -6,7 +6,7 @@ import torch
 import random
 import torch.nn as nn
 import torch.optim as optim
-import data_handler as data_handler
+import new_data_handler as data_handler
 from batchify_pad import batchify, pad_collate
 from models.LSTMDecoder import LSTMDecoder
 from models.BiLSTMEncoder import BiLSTMEncoder

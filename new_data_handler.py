@@ -46,11 +46,11 @@ class Corpus(object):
         file = open(os.path.join(path, 'test/test.box'), "r")
         testtab = [ line.split('\n')[0] for line in file]
 
-        file = open(os.path.join(path, 'valid/valid.sent.formatted'), "r")
+        file = open(os.path.join(path, 'train/train.sent.formatted'), "r")
         valsent = [ line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'valid/valid.box'), "r")
+        file = open(os.path.join(path, 'train/train.box'), "r")
         valtab = [ line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'valid/valid.nb'), "r")
+        file = open(os.path.join(path, 'train/train.nb'), "r")
         valnb = [ line for line in file]
 
         self.train, self.val, self.test = self.build_data(trainsent, trainnb, testsent, testnb, valsent, valnb, traintab, testtab, valtab)
@@ -66,10 +66,10 @@ class Corpus(object):
         for t in self.train:
             content = t.box.split('\t')
             for c in content:
-                parts = list(c.split(":")[0])
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
+                parts = c.split(":")[0]
+                #for p in parts:
+                #    tokens += 1
+                self.dictionary.add_word(parts)
             content = t.sent.split('\n')
             for c in content:
                 words = ['<sos>'] + c.split(' ') + ['<eos>']
@@ -80,10 +80,10 @@ class Corpus(object):
         for t in self.val:
             content = t.box.split('\t')
             for c in content:
-                parts = list(c.split(":")[0])
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
+                parts = c.split(":")[0]
+                #for p in parts:
+                #    tokens += 1
+                self.dictionary.add_word(parts)
             content = t.sent.split('\n')
             for c in content:
                 words = ['<sos>'] + c.split(' ') + ['<eos>']
@@ -94,10 +94,10 @@ class Corpus(object):
         for t in self.test:
             content = t.box.split('\t')
             for c in content:
-                parts = list(c.split(":")[0])
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
+                parts = c.split(":")[0]
+                #for p in parts:
+                #    tokens += 1
+                self.dictionary.add_word(parts)
             content = t.sent.split('\n')
             for c in content:
                 words = ['<sos>'] + c.split(' ') + ['<eos>']
@@ -109,10 +109,19 @@ class Corpus(object):
         for t in self.train:
             content = t.box.split('\t')
             for c in range(0,len(content)):
-                parts = list(content[c].split(":")[0])
+                p = content[c].split(":")[0]
+                parts = [p,p]
                 for p in range(0,len(parts)):
                     parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
+                content[c] = ":".join(parts)
+                #content[c] = str(self.dictionary.word2idx[parts])
+                #print(content[c])
+                #print(self.dictionary.idx2word[int(content[c])])
+                #for i in content[c]:
+                #    if i != ':':
+                #        print(self.dictionary.idx2word[int(i)])
+                #print(self.dictionary.idx2word[i] for i in content[c])
+                #exit(0)
             t.box = '\t'.join(content)
 
             content = t.sent.split('\n')
@@ -126,10 +135,12 @@ class Corpus(object):
         for t in self.val:
             content = t.box.split('\t')
             for c in range(0,len(content)):
-                parts = list(content[c].split(":")[0])
+                p = content[c].split(":")[0]
+                parts = [p,p]
                 for p in range(0,len(parts)):
                     parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
+                #content[c] = str(self.dictionary.word2idx[parts])
+                content[c] = ":".join(parts)
             t.box = '\t'.join(content)
 
             content = t.sent.split('\n')
@@ -143,10 +154,12 @@ class Corpus(object):
         for t in self.test:
             content = t.box.split('\t')
             for c in range(0,len(content)):
-                parts = list(content[c].split(":")[0])
+                p = content[c].split(":")[0]
+                parts = [p,p]
                 for p in range(0,len(parts)):
                     parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
+                #content[c] = str(self.dictionary.word2idx[parts])
+                content[c] = ":".join(parts)
             t.box = '\t'.join(content)
 
             content = t.sent.split('\n')
@@ -164,18 +177,18 @@ class Corpus(object):
         for i in range(0,len(trainnb)):
             self.train.append(Data(traintab[i],'\n'.join(trainsent[k:k+int(trainnb[i].split()[0])])))
             k = k+int(trainnb[i].split()[0])
-            if i==11:
+            if i==5000:
                 break
         k = 0
         for i in range(0,len(testnb)):
             self.test.append(Data(testtab[i],'\n'.join(testsent[k:k+int(testnb[i].split()[0])])))
             k = k+int(testnb[i].split()[0])
-            if i==5:
+            if i==500:
                 break
         k = 0
         for i in range(0,len(valnb)):
             self.val.append(Data(valtab[i],'\n'.join(valsent[k:k+int(valnb[i].split()[0])])))
             k = k+int(valnb[i].split()[0])
-            if i==5:
+            if i==500:
                 break
         return self.train, self.val, self.test

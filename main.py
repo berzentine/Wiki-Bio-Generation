@@ -5,8 +5,8 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import data_handler as data_handler
-from batchify_pad import batchify, pad_collate
+import new_data_handler as data_handler
+from new_batchify_pad import batchify, pad_collate
 from models.LSTMDecoder import LSTMDecoder
 from models.BiLSTMEncoder import BiLSTMEncoder
 

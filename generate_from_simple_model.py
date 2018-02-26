@@ -3,7 +3,7 @@ import argparse
 import torch
 from torch.autograd import Variable
 
-import data_handler as data_handler
+import new_data_handler as data_handler
 
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 

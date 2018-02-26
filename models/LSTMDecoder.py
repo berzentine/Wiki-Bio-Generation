@@ -22,9 +22,15 @@ class LSTMDecoder(nn.Module):
         self.decoder.bias.data.fill_(0)
         self.decoder.weight.data.uniform_(-initrange,initrange)
 
-    def forward(self, input, hidden):
+    def forward(self, input, hidden, gen_flag):
         encoded = self.encoder(input)
+        if gen_flag:
+            encoded = encoded.unsqueeze(0)
         output, hidden = self.rnn(encoded, hidden)
+        # # print output
+        # if gen_flag:
+        #     output = output.unsqueeze(0)
+        #     print output
         decoded = self.decoder(output.view(output.size(0)*output.size(1), output.size(2)))
         return decoded.view(output.size(0), output.size(1), decoded.size(1)), hidden
 

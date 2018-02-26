@@ -61,8 +61,8 @@ print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(
 vocab_size = len(corpus.dictionary)
 
 
-if args.cuda:
-    input.data = input.data.cuda()
+#if args.cuda:
+#    input.data = input.cuda()
 
 def get_table(i):
     temp = []
@@ -76,11 +76,19 @@ with open(args.outf, 'w') as outf:
     for n in range(args.samples_to_generate):
         encoder_hidden = encoder.init_hidden(1)
         table = Variable(torch.LongTensor([get_table(n)]), volatile=True)
+        if args.cuda:
+            table = table.cuda()
         table_encoded, table_hidden = encoder.forward(table, encoder_hidden)
         hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
 
         decoder_input = Variable(torch.LongTensor([corpus.dictionary.word2idx[SOS_token]]), volatile = True)
+        if args.cuda:
+            decoder_input = decoder_input.cuda()
         # print decoder_input.unsqueeze(0).unsqueeze(0)
+        outf.write("Table: \n")
+        for i in get_table(n):
+            outf.write(corpus.dictionary.idx2word[i] + ('\n' if i % 20 == 19 else ' '))
+        outf.write('\nBiography: \n')
         for i in range(args.max_length):
             output, hidden = decoder(decoder_input, hidden, True)
             word_weights = output.squeeze().data.exp().cpu()
@@ -91,4 +99,4 @@ with open(args.outf, 'w') as outf:
             if word_idx == corpus.dictionary.word2idx[EOS_token]:
                 break
         outf.write("\n\n")
-
+        outf.write('=' * 89)

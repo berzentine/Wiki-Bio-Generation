@@ -14,6 +14,8 @@ parser.add_argument('--checkpoint', type=str, default='./saved_models/',
                     help='model checkpoint to use')
 parser.add_argument('--outf', type=str, default='generated.txt',
                     help='output file for generated text')
+parser.add_argument('--ref', type=str, default='reference.txt',
+                    help='output file for reference text')
 parser.add_argument('--max_length', type=int, default='30',
                     help='max seq to generate')
 parser.add_argument('--samples_to_generate', type=int, default='10',
@@ -25,7 +27,7 @@ parser.add_argument('--cuda', action='store_true', default=False,
 parser.add_argument('--log-interval', type=int, default=100,
                     help='reporting interval')
 args = parser.parse_args()
-
+generate = 1
 SOS_token = "<sos>"
 EOS_token = "<eos>"
 # Set the random seed manually for reproducibility.
@@ -72,6 +74,17 @@ def get_table(i):
     return temp
 
 
+def get_sent(i):
+    temp = []
+    example = corpus.train[i]
+    for index in range(0,len(example.sent.split('\n'))):
+        if index<=generate-1:
+            for i in example.sent.split('\n')[index].split():
+                temp.append(i)
+    return temp
+
+fp = open(args.ref, 'w')
+
 with open(args.outf, 'w') as outf:
     for n in range(args.samples_to_generate):
         encoder_hidden = encoder.init_hidden(1)
@@ -84,19 +97,23 @@ with open(args.outf, 'w') as outf:
         decoder_input = Variable(torch.LongTensor([corpus.dictionary.word2idx[SOS_token]]), volatile = True)
         if args.cuda:
             decoder_input = decoder_input.cuda()
+        sentence = get_sent(n)
+        for i in sentence[1:len(sentence)-1]:
+            fp.write(corpus.dictionary.idx2word[int(i)]+" ")
         # print decoder_input.unsqueeze(0).unsqueeze(0)
-        outf.write("Table: \n")
-        for i in get_table(n):
-            outf.write(corpus.dictionary.idx2word[i] + ('\n' if i % 20 == 19 else ' '))
-        outf.write('\nBiography: \n')
+        # outf.write("Table: \n")
+        # for i in get_table(n):
+        #     outf.write(corpus.dictionary.idx2word[i] + ('\n' if i % 20 == 19 else ' '))
+        # outf.write('\nBiography: \n')
         for i in range(args.max_length):
             output, hidden = decoder(decoder_input, hidden, True)
             word_weights = output.squeeze().data.exp().cpu()
             word_idx = torch.multinomial(word_weights, 1)[0]
             decoder_input.data.fill_(word_idx)
             word = corpus.dictionary.idx2word[word_idx]
-            outf.write(word + ('\n' if i % 20 == 19 else ' '))
+            outf.write(word + " ")
             if word_idx == corpus.dictionary.word2idx[EOS_token]:
                 break
         outf.write("\n\n")
-        outf.write('=' * 89)
+        fp.write("\n\n")
+        # outf.write('=' * 89)

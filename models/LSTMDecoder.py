@@ -12,7 +12,7 @@ class LSTMDecoder(nn.Module):
         self.encoder = nn.Embedding(vocab_size, embed_size)
         self.rnn = nn.LSTM(input_size=embed_size, hidden_size=decoder_hidden_size, num_layers=num_layers, bidirectional=False, batch_first=True)
         self.decoder = nn.Linear(decoder_hidden_size, vocab_size)
-        self.init_weights()
+        #self.init_weights()
 
     def init_weights(self):
         initrange = 0.1

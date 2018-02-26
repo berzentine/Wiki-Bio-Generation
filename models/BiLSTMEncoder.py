@@ -8,16 +8,15 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class BiLSTMEncoder(nn.Module):
-    def __init__(self, hidden_size, num_layers, vocab_size, embed_size):
+    def __init__(self, dropout,  vocab_size, embed_size, num_layers, encoder_hidden_size):
         super(BiLSTMEncoder, self).__init__()
         self.vocab_size = vocab_size
         self.embed_size = embed_size
-        self.hidden_dim = hidden_size
+        self.hidden_dim = encoder_hidden_size
         self.num_layers = num_layers
         self.embed = nn.Embedding(self.vocab_size, self.embed_size)
 
-        self.biLSTM = nn.LSTM(input_size=self.embed_size, hidden_size=hidden_size//2, num_layers=num_layers, bidirectional=True, batch_first=True)
-
+        self.biLSTM = nn.LSTM(input_size=self.embed_size, hidden_size=encoder_hidden_size//2, num_layers=num_layers, bidirectional=True, batch_first=True)
         #self.initialize_weights()
 
     def forward(self, input, hidden):

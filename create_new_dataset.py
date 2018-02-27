@@ -62,7 +62,7 @@ class Corpus(object):
     def tokenize_common(self):
         tokens = 0
         k=0
-        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/train/train.sent.formatted", "w")
+        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/train/train.sent.formatted1", "w")
         for t in self.train:
             k+=1
             fields = []
@@ -87,13 +87,14 @@ class Corpus(object):
                         if word in field_values[field]:
                             new_words.append(field)
                             flag = False
+                            break
                     if flag:
                         new_words.append(word)
                 sentences.append(" ".join(new_words))
             for sentence in sentences:
                 fp.write(sentence+"\n")
 
-        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/test/test.sent.formatted", "w")
+        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/test/test.sent.formatted1", "w")
         for t in self.test:
             k+=1
             fields = []
@@ -118,13 +119,14 @@ class Corpus(object):
                         if word in field_values[field]:
                             new_words.append(field)
                             flag = False
+                            break
                     if flag:
                         new_words.append(word)
                 sentences.append(" ".join(new_words))
             for sentence in sentences:
                 fp.write(sentence+"\n")
 
-        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/valid/valid.sent.formatted", "w")
+        fp = open("./data/Wiki-Data/wikipedia-biography-dataset/valid/valid.sent.formatted1", "w")
         for t in self.train:
             k+=1
             fields = []
@@ -149,6 +151,7 @@ class Corpus(object):
                         if word in field_values[field]:
                             new_words.append(field)
                             flag = False
+                            break
                     if flag:
                         new_words.append(word)
                 sentences.append(" ".join(new_words))
@@ -162,20 +165,20 @@ class Corpus(object):
         for i in range(0,len(trainnb)):
             self.train.append(Data(traintab[i],'\n'.join(trainsent[k:k+int(trainnb[i].split()[0])])))
             k = k+int(trainnb[i].split()[0])
-            if i==11:
-                break
+            #if i==11:
+            #    break
         k = 0
         for i in range(0,len(testnb)):
             self.test.append(Data(testtab[i],'\n'.join(testsent[k:k+int(testnb[i].split()[0])])))
             k = k+int(testnb[i].split()[0])
-            if i==11:
-                break
+            #if i==11:
+            #    break
         k = 0
         for i in range(0,len(valnb)):
             self.val.append(Data(valtab[i],'\n'.join(valsent[k:k+int(valnb[i].split()[0])])))
             k = k+int(valnb[i].split()[0])
-            if i==11:
-                break
+            #if i==11:
+            #    break
         return self.train, self.val, self.test
 
 

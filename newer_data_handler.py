@@ -32,21 +32,21 @@ class Corpus(object):
         self.train = []
         self.val = []
         self.test = []
-        file = open(os.path.join(path, 'train/train.sent.formatted'), "r")
+        file = open(os.path.join(path, 'train/train.sent.formatted1'), "r")
         trainsent = [line.split('\n')[0] for line in file]
         file = open(os.path.join(path, 'train/train.nb'), "r")
         trainnb = [ line for line in file]
         file = open(os.path.join(path, 'train/train.box'), "r")
         traintab = [ line.split('\n')[0] for line in file]
 
-        file = open(os.path.join(path, 'test/test.sent.formatted'), "r")
+        file = open(os.path.join(path, 'test/test.sent.formatted1'), "r")
         testsent = [ line.split('\n')[0] for line in file]
         file = open(os.path.join(path, 'test/test.nb'), "r")
         testnb = [ line for line in file]
         file = open(os.path.join(path, 'test/test.box'), "r")
         testtab = [ line.split('\n')[0] for line in file]
 
-        file = open(os.path.join(path, 'valid/valid.sent.formatted'), "r")
+        file = open(os.path.join(path, 'valid/valid.sent.formatted1'), "r")
         valsent = [ line.split('\n')[0] for line in file]
         file = open(os.path.join(path, 'valid/valid.box'), "r")
         valtab = [ line.split('\n')[0] for line in file]

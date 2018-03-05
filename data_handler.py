@@ -40,14 +40,14 @@ class Corpus(object):
     def __init__(self, path, top_k): # top_k is the number of sentences we would be generating
 
         self.train_ppos_dict = Dictionary()
-        self.train_ppos = []
-        self.train_pneg_dict = Dictionary()
-        self.train_pneg = []
-        self.train_field_dict = Dictionary()
-        self.train_field = []
-        self.train_value_dict = Dictionary()
-        self.train_value = []
         self.train_sent_dict = Dictionary()
+        self.train_pneg_dict = Dictionary()
+        self.train_field_dict = Dictionary()
+        self.train_value_dict = Dictionary()
+        self.train_ppos = []
+        self.train_pneg = []
+        self.train_field = []
+        self.train_value = []
         self.train_sent = []
 
         self.test_ppos_dict = Dictionary()
@@ -99,9 +99,12 @@ class Corpus(object):
                 temp_sent = []
                 for c in current:
                     c = ['<sos>']  + c.split(' ') + ['<eos>']
+                    #print c
                     for word in c:
-                        data_dict[i][4].dictionary.add_word(word)
+                        data_dict[i][4].add_word(word)
                         temp_sent.append(data_dict[i][4].word2idx[word])
+                    #print temp_sent
+                    #print '*'*32
                 data_store[i][4].append(temp_sent)
 
             # handle the table and tokenize
@@ -118,7 +121,7 @@ class Corpus(object):
                 temp_value = []
                 line = line.split('\n')[0].split('\t')
                 j = 0
-                for l in line:
+                for l in line: # address each part in the table for f, p+, p-, and value
                     data_dict[i][1].add_word(l.split(':')[0])
                     temp_field.append(data_dict[i][1].word2idx[l.split(':')[0]])
 
@@ -128,12 +131,12 @@ class Corpus(object):
                     data_dict[i][2].add_word(j)
                     temp_ppos.append(data_dict[i][2].word2idx[j])
 
-                    data_dict[i][3].add_word(len(line)-j)
-                    temp_pneg.append(data_dict[i][3].word2idx[len(line)-j])
+                    data_dict[i][3].add_word(len(line)-j-1)
+                    temp_pneg.append(data_dict[i][3].word2idx[len(line)-j-1])
                     j+=1
 
                 data_store[i][0].append(temp_value)
                 data_store[i][1].append(temp_field)
                 data_store[i][2].append(temp_ppos)
                 data_store[i][3].append(temp_pneg)
-        
+            break

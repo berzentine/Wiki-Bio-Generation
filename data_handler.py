@@ -1,6 +1,17 @@
 import os
 import torch
 
+
+"""
+    train.box.pos
+    |-train.box.rpos
+    |-train.box.val
+    |-train.box.lab
+    |-train.summary.id
+    |-train.box.val.id
+    |-train.box.lab.id
+
+"""
 class Dictionary(object):
     def __init__(self):
         self.word2idx = {}
@@ -25,157 +36,104 @@ class Data(object):
         self.sent = sentence
 
 
-
 class Corpus(object):
-    def __init__(self, path):
-        self.dictionary = Dictionary()
-        self.train = []
-        self.val = []
-        self.test = []
-        file = open(os.path.join(path, 'train/train.sent'), "r")
-        trainsent = [line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'train/train.nb'), "r")
-        trainnb = [ line for line in file]
-        file = open(os.path.join(path, 'train/train.box'), "r")
-        traintab = [ line.split('\n')[0] for line in file]
+    def __init__(self, path, top_k): # top_k is the number of sentences we would be generating
 
-        file = open(os.path.join(path, 'test/test.sent'), "r")
-        testsent = [ line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'test/test.nb'), "r")
-        testnb = [ line for line in file]
-        file = open(os.path.join(path, 'test/test.box'), "r")
-        testtab = [ line.split('\n')[0] for line in file]
+        self.train_ppos_dict = Dictionary()
+        self.train_ppos = []
+        self.train_pneg_dict = Dictionary()
+        self.train_pneg = []
+        self.train_field_dict = Dictionary()
+        self.train_field = []
+        self.train_value_dict = Dictionary()
+        self.train_value = []
+        self.train_sent_dict = Dictionary()
+        self.train_sent = []
 
-        file = open(os.path.join(path, 'valid/valid.sent'), "r")
-        valsent = [ line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'valid/valid.box'), "r")
-        valtab = [ line.split('\n')[0] for line in file]
-        file = open(os.path.join(path, 'valid/valid.nb'), "r")
-        valnb = [ line for line in file]
+        self.test_ppos_dict = Dictionary()
+        self.test_pneg_dict = Dictionary()
+        self.test_field_dict = Dictionary()
+        self.test_value_dict = Dictionary()
+        self.test_sent_dict = Dictionary()
+        self.test_sent = []
+        self.test_ppos = []
+        self.test_pneg = []
+        self.test_field = []
+        self.test_value = []
 
-        self.train, self.val, self.test = self.build_data(trainsent, trainnb, testsent, testnb, valsent, valnb, traintab, testtab, valtab)
-        # TODO: tokenize each of these and update here , should return updated dictionary, and tokenized text
-        self.tokenize_common()
+        self.valid_ppos_dict = Dictionary()
+        self.valid_pneg_dict = Dictionary()
+        self.valid_field_dict = Dictionary()
+        self.valid_value_dict = Dictionary()
+        self.valid_sent_dict = Dictionary()
+        self.valid_sent = []
+        self.valid_ppos = []
+        self.valid_pneg = []
+        self.valid_field = []
+        self.valid_value = []
 
+        data = [['train/train.sent', 'train/train.nb', 'train/train.box'], \
+        ['test/test.sent', 'test/test.nb',  'test/test.box'], \
+        ['valid/valid.sent', 'valid/valid.box', 'valid/valid.nb']]
 
-    # Function to have a common dictionary for tables and biography texts
-    def tokenize_common(self):
-        self.dictionary.add_word('<pad>')
-        # Add words to the dictionary
-        tokens = 0
-        for t in self.train:
-            content = t.box.split('\t')
-            for c in content:
-                parts = c.split(":")
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
-            content = t.sent.split('\n')
-            for c in content:
-                words = ['<sos>'] + c.split(' ') + ['<eos>']
-                tokens += len(words)
-                for word in words:
-                    self.dictionary.add_word(word)
+        data_store = [[self.train_value, self.train_field , self.train_ppos, self.train_pneg, self.train_sent],\
+        [self.test_value, self.test_field , self.test_ppos, self.test_pneg, self.test_sent],\
+        [self.valid_value, self.valid_field , self.valid_ppos, self.valid_pneg, self.valid_sent]]
 
-        for t in self.val:
-            content = t.box.split('\t')
-            for c in content:
-                parts = c.split(":")
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
-            content = t.sent.split('\n')
-            for c in content:
-                words = ['<sos>'] + c.split(' ') + ['<eos>']
-                tokens += len(words)
-                for word in words:
-                    self.dictionary.add_word(word)
+        data_dict = [[self.train_value_dict, self.train_field_dict , self.train_ppos_dict, self.train_pneg_dict, self.train_sent_dict],\
+        [self.test_value_dict, self.test_field_dict , self.test_ppos_dict, self.test_pneg_dict, self.test_sent_dict],\
+        [self.valid_value_dict, self.valid_field_dict , self.valid_ppos_dict, self.valid_pneg_dict, self.valid_sent_dict]]
 
-        for t in self.test:
-            content = t.box.split('\t')
-            for c in content:
-                parts = c.split(":")
-                for p in parts:
-                    tokens += 1
-                    self.dictionary.add_word(p)
-            content = t.sent.split('\n')
-            for c in content:
-                words = ['<sos>'] + c.split(' ') + ['<eos>']
-                tokens += len(words)
-                for word in words:
-                    self.dictionary.add_word(word)
+        for i in range(0,3):
+            # handle the sentences # handle the nb # tokenize the appendings
+            file = open(os.path.join(path, data[i][0]), "r")
+            sentences = [line.split('\n')[0] for line in file]
+            file = open(os.path.join(path, data[i][1]), "r")
+            no_sentences = [int(line.split('\n')[0]) for line in file]
+            data_dict[i][4].add_word('<pad>')
+            z = 0
+            for s in range(len(no_sentences)):
+                current = sentences[z:z+no_sentences[s]]
+                z=z+no_sentences[s]
+                current =  current[0:top_k]
+                temp_sent = []
+                for c in current:
+                    c = ['<sos>']  + c.split(' ') + ['<eos>']
+                    for word in c:
+                        data_dict[i][4].dictionary.add_word(word)
+                        temp_sent.append(data_dict[i][4].word2idx[word])
+                data_store[i][4].append(temp_sent)
 
-        # Tokenize file
-        for t in self.train:
-            content = t.box.split('\t')
-            for c in range(0,len(content)):
-                parts = content[c].split(":")
-                for p in range(0,len(parts)):
-                    parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
-            t.box = '\t'.join(content)
+            # handle the table and tokenize
+            file = open(os.path.join(path, data[i][2]), "r")
+            for line in file:
+                data_dict[i][0].add_word('<pad>')
+                data_dict[i][1].add_word('<pad>')
+                data_dict[i][2].add_word('<pad>')
+                data_dict[i][3].add_word('<pad>')
 
-            content = t.sent.split('\n')
-            for c in range(0,len(content)):
-                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
-                for word in range(0,len(words)):
-                    words[word] = str(self.dictionary.word2idx[words[word]])
-                content[c] = ' '.join(words)
-            t.sent = '\n'.join(content)
+                temp_ppos = []
+                temp_pneg = []
+                temp_field = []
+                temp_value = []
+                line = line.split('\n')[0].split('\t')
+                j = 0
+                for l in line:
+                    data_dict[i][1].add_word(l.split(':')[0])
+                    temp_field.append(data_dict[i][1].word2idx[l.split(':')[0]])
 
-        for t in self.val:
-            content = t.box.split('\t')
-            for c in range(0,len(content)):
-                parts = content[c].split(":")
-                for p in range(0,len(parts)):
-                    parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
-            t.box = '\t'.join(content)
+                    data_dict[i][0].add_word(l.split(':')[1])
+                    temp_value.append(data_dict[i][0].word2idx[l.split(':')[1]])
 
-            content = t.sent.split('\n')
-            for c in range(0,len(content)):
-                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
-                for word in range(0,len(words)):
-                    words[word] = str(self.dictionary.word2idx[words[word]])
-                content[c] = ' '.join(words)
-            t.sent = '\n'.join(content)
+                    data_dict[i][2].add_word(j)
+                    temp_ppos.append(data_dict[i][2].word2idx[j])
 
-        for t in self.test:
-            content = t.box.split('\t')
-            for c in range(0,len(content)):
-                parts = content[c].split(":")
-                for p in range(0,len(parts)):
-                    parts[p] = str(self.dictionary.word2idx[parts[p]])
-                content[c] = ':'.join(parts)
-            t.box = '\t'.join(content)
+                    data_dict[i][3].add_word(len(line)-j)
+                    temp_pneg.append(data_dict[i][3].word2idx[len(line)-j])
+                    j+=1
 
-            content = t.sent.split('\n')
-            for c in range(0,len(content)):
-                words = ['<sos>'] + content[c].split(' ') + ['<eos>']
-                for word in range(0,len(words)):
-                    words[word] = str(self.dictionary.word2idx[words[word]])
-                content[c] = ' '.join(words)
-            t.sent = '\n'.join(content)
-
-
-
-    def build_data(self, trainsent, trainnb, testsent, testnb, valsent, valnb, traintab, testtab, valtab):
-        k = 0
-        for i in range(0,len(trainnb)):
-            self.train.append(Data(traintab[i],'\n'.join(trainsent[k:k+int(trainnb[i].split()[0])])))
-            k = k+int(trainnb[i].split()[0])
-            if i==11:
-                break
-        k = 0
-        for i in range(0,len(testnb)):
-            self.test.append(Data(testtab[i],'\n'.join(testsent[k:k+int(testnb[i].split()[0])])))
-            k = k+int(testnb[i].split()[0])
-            if i==11:
-                break
-        k = 0
-        for i in range(0,len(valnb)):
-            self.val.append(Data(valtab[i],'\n'.join(valsent[k:k+int(valnb[i].split()[0])])))
-            k = k+int(valnb[i].split()[0])
-            if i==11:
-                break
-        return self.train, self.val, self.test
+                data_store[i][0].append(temp_value)
+                data_store[i][1].append(temp_field)
+                data_store[i][2].append(temp_ppos)
+                data_store[i][3].append(temp_pneg)
+        

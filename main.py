@@ -67,6 +67,8 @@ print("Load data")
 corpus = data_handler.Corpus(data_path, 1)
 #Use: table: corpus.train[i].box, bio: corpus.train[i].sent
 #Sentence are \n seprated and box is \t seprated
+print len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent)
+
 """
 print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test))
 ###############################################################################

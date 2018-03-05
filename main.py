@@ -64,9 +64,10 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_handler.Corpus(data_path)
+corpus = data_handler.Corpus(data_path, 1)
 #Use: table: corpus.train[i].box, bio: corpus.train[i].sent
 #Sentence are \n seprated and box is \t seprated
+"""
 print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test))
 ###############################################################################
 # Batchify, Padding, Stacking
@@ -80,4 +81,4 @@ train_box, train_sent, val_box, val_sent, test_box, test_sent = batchify(corpus)
 
 train_box, train_sent, train_box_length, train_sent_length = pad_collate((train_box, train_sent), batchsize)
 val_box, val_sent, val_box_length, val_sent_length = pad_collate((val_box, val_sent), batchsize)
-test_box, test_sent, test_box_length, test_sent_length = pad_collate((test_box, test_sent), batchsize)
+test_box, test_sent, test_box_length, test_sent_length = pad_collate((test_box, test_sent), batchsize)"""

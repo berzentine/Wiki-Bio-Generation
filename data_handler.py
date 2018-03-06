@@ -63,7 +63,7 @@ class Corpus(object):
 
         data = [['train/train.sent', 'train/train.nb', 'train/train.box'], \
         ['test/test.sent', 'test/test.nb',  'test/test.box'], \
-        ['valid/valid.sent', 'valid/valid.box', 'valid/valid.nb']]
+        ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         data_store = [[self.train_value, self.train_field , self.train_ppos, self.train_pneg, self.train_sent],\
         [self.test_value, self.test_field , self.test_ppos, self.test_pneg, self.test_sent],\
@@ -74,6 +74,8 @@ class Corpus(object):
         [self.valid_value_dict, self.valid_field_dict , self.valid_ppos_dict, self.valid_pneg_dict, self.valid_sent_dict]]
 
         for i in range(0,3):
+            if i ==1: print 'Done loading train data'
+            if i ==2: print 'Done loading test data'
             # handle the sentences # handle the nb # tokenize the appendings
             file = open(os.path.join(path, data[i][0]), "r")
             sentences = [line.split('\n')[0] for line in file]
@@ -128,4 +130,5 @@ class Corpus(object):
                 data_store[i][1].append(temp_field)
                 data_store[i][2].append(temp_ppos)
                 data_store[i][3].append(temp_pneg)
-            break
+            #break
+        print 'Done loading val. data'

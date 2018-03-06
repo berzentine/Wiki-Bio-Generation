@@ -1,17 +1,6 @@
 import os
 import torch
 
-
-"""
-    train.box.pos
-    |-train.box.rpos
-    |-train.box.val
-    |-train.box.lab
-    |-train.summary.id
-    |-train.box.val.id
-    |-train.box.lab.id
-
-"""
 class Dictionary(object):
     def __init__(self):
         self.word2idx = {}

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import data_handler as data_handler
-from batchify_pad import batchify, pad_collate
+from batchify_pad import batchify
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
@@ -65,22 +65,13 @@ if torch.cuda.is_available():
 
 print("Load data")
 corpus = data_handler.Corpus(data_path, 1)
-#Use: table: corpus.train[i].box, bio: corpus.train[i].sent
-#Sentence are \n seprated and box is \t seprated
 print len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent)
-
-"""
-print('Train:', len(corpus.train), 'Validation:', len(corpus.val), 'Test:', len(corpus.test))
-###############################################################################
-# Batchify, Padding, Stacking
-###############################################################################
-train_box, train_sent, val_box, val_sent, test_box, test_sent = batchify(corpus)
-# datm_list = [(train_box, train_sent), (val_box, val_sent), (test_box, test_sent)]
-# padded_data = []
-# for datum in datm_list:
-#     train_box, train_sent, train_box_length, train_sent_length = pad_collate(datum, batchsize)
-#     padded_data.append((train_box, train_box_length, train_sent, train_sent_length))
-
-train_box, train_sent, train_box_length, train_sent_length = pad_collate((train_box, train_sent), batchsize)
-val_box, val_sent, val_box_length, val_sent_length = pad_collate((val_box, val_sent), batchsize)
-test_box, test_sent, test_box_length, test_sent_length = pad_collate((test_box, test_sent), batchsize)"""
+data_padded, data_orig_leng = batchify(corpus, batchsize)
+for i in range(0,3):
+    for j in range(0,5):
+        for k in data_padded[i][j]:
+            for l in k:
+                print len(l)
+                print l
+            print 'Batch end*'*32
+        print 'Set end*'*32

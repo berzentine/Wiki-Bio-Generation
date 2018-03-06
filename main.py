@@ -65,13 +65,19 @@ if torch.cuda.is_available():
 
 print("Load data")
 corpus = data_handler.Corpus(data_path, 1)
+print '='*32
+print '='*15, 'SANITY CHECK', '='*15
+print '='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --'
 print len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent)
+print len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent)
+print len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent)
+print '='*32
 data_padded, data_orig_leng = batchify(corpus, batchsize)
-for i in range(0,3):
+
+"""for i in range(0,3):
     for j in range(0,5):
         for k in data_padded[i][j]:
             for l in k:
                 print len(l)
-                print l
-            print 'Batch end*'*32
-        print 'Set end*'*32
+        print 'type end*'*32
+    break"""

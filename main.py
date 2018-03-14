@@ -146,7 +146,7 @@ def train():
         target_length = targets.size(1)
         loss = 0
         for di in range(target_length):
-            # print hidden
+            print(hidden.size())
             output, hidden = decoder.forward(data, hidden, False)
             best_vocab, best_index = output.data.topk(1)
             next_index = best_index[:,0]

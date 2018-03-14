@@ -69,7 +69,7 @@ vocab_size = len(corpus.dictionary)
 
 def get_table(i):
     temp = []
-    for index in corpus.test[i].box.split('\t'):
+    for index in corpus.train[i].box.split('\t'):
         for i in index.split(':'):
             temp.append(int(i))
     return temp
@@ -77,7 +77,7 @@ def get_table(i):
 
 def get_sent(i):
     temp = []
-    example = corpus.test[i]
+    example = corpus.train[i]
     for index in range(0,len(example.sent.split('\n'))):
         if index<=generate-1:
             for i in example.sent.split('\n')[index].split():

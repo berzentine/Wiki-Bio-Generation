@@ -177,18 +177,18 @@ class Corpus(object):
         for i in range(0,len(trainnb)):
             self.train.append(Data(traintab[i],'\n'.join(trainsent[k:k+int(trainnb[i].split()[0])])))
             k = k+int(trainnb[i].split()[0])
-            if i==100000:
+            if i==1000:
                 break
         k = 0
         for i in range(0,len(testnb)):
             self.test.append(Data(testtab[i],'\n'.join(testsent[k:k+int(testnb[i].split()[0])])))
             k = k+int(testnb[i].split()[0])
-            if i==10000:
+            if i==500:
                 break
         k = 0
         for i in range(0,len(valnb)):
             self.val.append(Data(valtab[i],'\n'.join(valsent[k:k+int(valnb[i].split()[0])])))
             k = k+int(valnb[i].split()[0])
-            if i==10000:
+            if i==500:
                 break
         return self.train, self.val, self.test

@@ -10,7 +10,7 @@ import newer_data_handler as data_handler
 from new_batchify_pad import batchify, pad_collate
 from models.LSTMDecoder import LSTMDecoder
 from models.BiLSTMEncoder import BiLSTMEncoder
-
+from models.initializer import init_encoder_hidden
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
@@ -111,8 +111,9 @@ def get_targets(source, box_batch, evaluation=False):
 
 
 vocab_size = len(corpus.dictionary)
-decoder = LSTMDecoder(dropout=dropout, vocab_size=vocab_size, embed_size=emb_size, num_layers=num_layers, decoder_hidden_size=hidden_size)
-encoder = BiLSTMEncoder(dropout=dropout, vocab_size=vocab_size, embed_size=emb_size, num_layers=num_layers, encoder_hidden_size=hidden_size)
+decoder = nn.DataParallel(LSTMDecoder(dropout=dropout, vocab_size=vocab_size, embed_size=emb_size, num_layers=num_layers, decoder_hidden_size=hidden_size), dim=1)
+encoder = nn.DataParallel(BiLSTMEncoder(dropout=dropout, vocab_size=vocab_size, embed_size=emb_size, num_layers=num_layers, encoder_hidden_size=hidden_size), dim=1)
+
 if args.cuda:
     decoder.cuda()
     encoder.cuda()
@@ -142,17 +143,22 @@ def train():
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(train_box, train_sent, train_box_length, train_sent_length):
         i+=1
         data, targets, box_batch = get_targets(sent_batch, box_batch, False)
-        initial_encoder_hidden = encoder.init_hidden(list(box_batch.size())[0])
+        #initial_encoder_hidden = init_encoder_hidden(encoder, num_layers, hidden_size,list(box_batch.size())[0]//4)
+        #print(initial_encoder_hidden[0].size(), initial_encoder_hidden[1].size())
+        #print(box_batch.size())
+        initial_encoder_hidden = None
         table_encoded, table_hidden = encoder.forward(box_batch, initial_encoder_hidden)
+        #print(table_hidden[0].size(), table_hidden[1].size())
         hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
 
+        print(hidden[0].size(), hidden[1].size())
         target_length = targets.size(1)
         loss = 0
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
         if use_teacher_forcing:
             for di in range(target_length):
-                # print hidden
+                print(hidden[0].size(), hidden[1].size())
                 output, hidden = decoder.forward(data, hidden, False)
                 best_vocab, best_index = output.data.topk(1)
                 next_index = best_index[:,0]
@@ -164,7 +170,7 @@ def train():
                 loss += criterion(output, targets[:, di])
         else:
             for di in range(target_length):
-                # print hidden
+                print(hidden[0].size(), hidden[1].size())
                 output, hidden = decoder.forward(data, hidden, False)
                 best_vocab, best_index = output.data.topk(1)
                 next_index = best_index[:,0]
@@ -215,7 +221,10 @@ def evaluate(data_source_box, data_source_sent, data_source_box_lengths, data_so
     total_words = 0
     for box_batch, sent_batch, box_length_batch, sent_length_batch in zip(data_source_box, data_source_sent, data_source_box_lengths, data_source_sent_lengths):
         data, targets, box_batch = get_targets(sent_batch, box_batch, True)
-        initial_encoder_hidden = encoder.init_hidden(list(box_batch.size())[0])
+        #initial_encoder_hidden = encoder.init_hidden(list(box_batch.size())[0])
+        
+        initial_encoder_hidden = None
+
         table_encoded, table_hidden = encoder.forward(box_batch, initial_encoder_hidden)
         hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
 

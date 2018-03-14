@@ -26,7 +26,11 @@ class LSTMDecoder(nn.Module):
         encoded = self.encoder(input)
         if gen_flag:
             encoded = encoded.unsqueeze(0)
+        print("LSTM:")
+        print(hidden[0].size(), hidden[1].size())
         output, hidden = self.rnn(encoded, hidden)
+        print("LSTM OUT:")
+        print(hidden[0].size(), hidden[1].size())
         # # print output
         # if gen_flag:
         #     output = output.unsqueeze(0)

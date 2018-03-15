@@ -5,7 +5,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import data_handler as data_handler
+import data_reader as data_handler
 from batchify_pad import batchify, pad_collate
 from models.LSTMLM import RNNModel
 from utils.plot_utils import plot

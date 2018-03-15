@@ -5,7 +5,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import data_handler as data_handler
+import data_reader as data_reader
 from batchify_pad import batchify
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
@@ -17,6 +17,7 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
+parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.1,help='learning rate')
@@ -33,6 +34,7 @@ parser.add_argument('--epochs', type=int, default=50,help='epochs')
 
 args = parser.parse_args()
 cuda = args.cuda
+verbose = args.verbose
 total_epochs = args.epochs
 dropout = args.dropout
 seed = args.seed
@@ -46,12 +48,15 @@ model_save_path = args.model_save_path
 lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
+
+
 ###############################################################################
 # Code Setup
     # TODO: Load and make embeddings vector
     # Check and Set Cuda
     # Load Data and Tokenize it
 ###############################################################################
+
 print("Load embedding")
 emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
 #w2v_vocab, emb_vec = torchwordemb.load_word2vec_bin(emb_path)
@@ -64,15 +69,16 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_handler.Corpus(data_path, 1)
-print '='*32
-print '='*15, 'SANITY CHECK', '='*15
-print '='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --'
-print len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent)
-print len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent)
-print len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent)
-print '='*32
-data_padded, data_orig_leng = batchify(corpus, batchsize)
+corpus = data_reader.Corpus(data_path, 1, verbose)
+print('='*32)
+if verbose:
+    print('='*15, 'SANITY CHECK', '='*15)
+    print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
+    print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent))
+    print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent))
+    print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent))
+    print('='*32)
+data_padded, data_orig_leng = batchify(corpus, batchsize, verbose)
 
 """for i in range(0,3):
     for j in range(0,5):

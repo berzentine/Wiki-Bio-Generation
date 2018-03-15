@@ -1,6 +1,8 @@
 import torch
 import numpy as np
-def batchify(corpus, batchsize):
+
+
+def batchify(corpus, batchsize, verbose):
     data_store = [[corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent],\
     [corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent],\
     [corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent]]
@@ -54,8 +56,9 @@ def batchify(corpus, batchsize):
 
 
     for i in range(0,3):
-        if i ==1: print 'Done batchifying train data'
-        if i ==2: print 'Done batchifying test data'
+        if verbose:
+            if i ==1: print('Done batchifying train data')
+            if i ==2: print('Done batchifying test data')
         datum = sorted(zip(data_store[i][4], data_store[i][0], data_store[i][1], data_store[i][2], data_store[i][3]), key=lambda tup: len(tup[0]))
         for d in range(0,len(datum), batchsize):
             temp_sentences_actual_length = []
@@ -109,5 +112,5 @@ def batchify(corpus, batchsize):
             data_length[i][1].append(temp_table_field_actual_length)
             data_length[i][0].append(temp_table_value_actual_length)
         #break
-        print 'Done batchifying valid data'
+        if verbose: print('Done batchifying valid data')
     return data_padded, data_length

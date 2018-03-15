@@ -80,10 +80,5 @@ if verbose:
     print('='*32)
 data_padded, data_orig_leng = batchify(corpus, batchsize, verbose)
 
-"""for i in range(0,3):
-    for j in range(0,5):
-        for k in data_padded[i][j]:
-            for l in k:
-                print len(l)
-        print 'type end*'*32
-    break"""
+
+

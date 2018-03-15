@@ -6,7 +6,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import data_reader as data_reader
+import random
 from batchify_pad import batchify
+from models.joint_model import Seq2SeqModel
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
@@ -80,5 +82,76 @@ if verbose:
     print('='*32)
 data_padded, data_orig_leng = batchify(corpus, batchsize, verbose)
 
+#Build Model and move to CUDA
+model = Seq2SeqModel()
+if args.cuda:
+    model.cuda()
+
+#Build criterion and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 
+def get_data(data_source, num):
+    #TODO: return cuda form of data
+    pass
+
+
+train_batches = [x for x in range(0, len(data_padded[0][0]))]
+val_batches = [x for x in range(0, len(data_padded[2][0]))]
+test_batches = [x for x in range(0, len(data_padded[1][0]))]
+
+def train():
+    random.shuffle(train_batches)
+    for batch_num in train_batches:
+        sent, ppos, pneg, field, value = get_data(data_padded[0], batch_num)
+        #TODO: model forward, loss calculation and debug print
+    pass
+
+
+def evaluate(data_source, data_order):
+    random.shuffle(data_order)
+    for batch_num in data_order:
+        sent, ppos, pneg, field, value = get_data(data_source, batch_num)
+        #TODO: model forward, loss calculation and debug print
+    pass
+
+
+best_val_loss = None
+val_losses = []
+train_losses = []
+try:
+    for epoch in range(1, total_epochs+1):
+        epoch_start_time = time.time()
+        train()
+        val_loss = evaluate(data_padded[2], val_batches)
+        val_losses.append(val_loss)
+        print('-' * 89)
+        print('| end of epoch {:3d} | time: {:5.6f}s | valid loss {:5.6f} | '
+              'valid ppl {:8.6f}'.format(epoch, (time.time() - epoch_start_time),
+                                         val_loss, math.exp(val_loss)))
+        print('-' * 89)
+        # Save the model if the validation loss is the best we've seen so far.
+        if not best_val_loss or val_loss < best_val_loss:
+            with open(model_save_path+"best_model.pth", 'wb') as f:
+                torch.save(model, f)
+            best_val_loss = val_loss
+        else:
+            # Anneal the learning rate if no improvement has been seen in the validation dataset.
+            lr /= 2
+except KeyboardInterrupt:
+    print('-' * 89)
+    print('Exiting from training early')
+
+plot(train_losses, val_losses, plot_save_path)
+
+# Load the best saved model.
+with open(model_save_path+"best_model.pth", 'rb') as f:
+    model = torch.load(f)
+
+# Run on test data.
+test_loss = evaluate(data_padded[1], test_batches)
+print('=' * 89)
+print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
+    test_loss, math.exp(test_loss)))
+print('=' * 89)

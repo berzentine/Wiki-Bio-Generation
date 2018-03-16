@@ -50,6 +50,7 @@ model_save_path = args.model_save_path
 lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
+# TODO: z vector should be of same dimension as hidden?
 
 
 ###############################################################################

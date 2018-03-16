@@ -38,6 +38,7 @@ class Encoder(nn.Module):
             self.register_parameter('bias_zhat', None)
             self.register_parameter('bias_ctilde', None)
 
-    def forward(self, d_t, z_t, h_t_1, c_t_1):
-        
-        return d_t_1, z_t_1, h_t, c_t
+    def forward(self, input, hidden, cell_state): # input vector, h_0 intialized as 0's and same for cell state
+        def recurrence(d_t, z_t, h_t_1, c_t_1):
+            i_t = F.sigmoid(F.linear(h_t_1, self.weight_ih, None) + F.linear(d_t, self.weight_ix, None) + self.bias_i)
+            return d_t_1, z_t_1, h_t, c_t

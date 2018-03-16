@@ -80,7 +80,10 @@ if verbose:
     print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent))
     print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent))
     print('='*32)
-data_padded, data_orig_leng = batchify(corpus, batchsize, verbose)
+
+train_data_padded, train_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
+test_data_padded, test_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
+val_data_padded, val_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
 
 #Build Model and move to CUDA
 model = Seq2SeqModel()
@@ -89,22 +92,22 @@ if args.cuda:
 
 #Build criterion and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
-
+# optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
+optimizer = optim.SGD(lr=lr)
 
 def get_data(data_source, num):
     #TODO: return cuda form of data
     pass
 
 
-train_batches = [x for x in range(0, len(data_padded[0][0]))]
-val_batches = [x for x in range(0, len(data_padded[2][0]))]
-test_batches = [x for x in range(0, len(data_padded[1][0]))]
+train_batches = [x for x in range(0, len(train_data_padded[0]))]
+val_batches = [x for x in range(0, len(val_data_padded[0]))]
+test_batches = [x for x in range(0, len(test_data_padded[0]))]
 
 def train():
     random.shuffle(train_batches)
     for batch_num in train_batches:
-        sent, ppos, pneg, field, value = get_data(data_padded[0], batch_num)
+        sent, ppos, pneg, field, value = get_data(train_data_padded, batch_num)
         #TODO: model forward, loss calculation and debug print
     pass
 
@@ -124,7 +127,7 @@ try:
     for epoch in range(1, total_epochs+1):
         epoch_start_time = time.time()
         train()
-        val_loss = evaluate(data_padded[2], val_batches)
+        val_loss = evaluate(val_data_padded, val_batches)
         val_losses.append(val_loss)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.6f}s | valid loss {:5.6f} | '
@@ -150,7 +153,7 @@ with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 
 # Run on test data.
-test_loss = evaluate(data_padded[1], test_batches)
+test_loss = evaluate(test_data_padded, test_batches)
 print('=' * 89)
 print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))

@@ -73,17 +73,30 @@ if torch.cuda.is_available():
 print("Load data")
 corpus = data_reader.Corpus(data_path, 1, verbose)
 print('='*32)
+
+corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
+corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
+
+corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
+corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], batchsize, verbose)
+
+corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
+corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
+
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
     print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
     print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent))
     print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent))
     print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent))
+
+    print('='*3, '# PLen +', '='*3, '# PLen -', '='*3, '# FLen', '='*3, '# V(F)Len', '='*3, '# SentLen', '-- Should be equal across rows --')
+    print(len(corpus.train_ppos_len), len(corpus.train_pneg_len), len(corpus.train_field_len), len(corpus.train_value_len), len(corpus.train_sent_len))
+    print(len(corpus.valid_ppos_len), len(corpus.valid_pneg_len), len(corpus.valid_field_len), len(corpus.valid_value_len), len(corpus.valid_sent_len))
+    print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
+
     print('='*32)
 
-train_data_padded, train_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
-test_data_padded, test_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
-val_data_padded, val_data_lengths = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
 
 #Build Model and move to CUDA
 model = Seq2SeqModel()

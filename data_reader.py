@@ -46,6 +46,11 @@ class Corpus(object):
         self.train_value_len = []
         self.train_sent = []
         self.train_sent_len = []
+        self.train = {"value": self.train_value, "value_dict": self.train_value_dict, "value_len": self.train_value_len,\
+                      "field": self.train_field, "field_dict": self.train_field_dict, 'field_len': self.train_field_len,\
+                      "ppos": self.train_ppos, "ppos_dict": self.train_ppos_dict, "ppos_len": self.train_ppos_len,\
+                      "pneg": self.train_pneg, "pneg_dict": self.train_pneg_dict, "pneg_len": self.train_pneg_len,\
+                      "sent": self.train_sent, "sent_dict": self.train_sent_dict, "sent_len": self.train_sent_len}
 
         self.test_ppos_dict = Dictionary()
         self.test_pneg_dict = Dictionary()
@@ -62,6 +67,11 @@ class Corpus(object):
         self.test_value_len = []
         self.test_sent = []
         self.test_sent_len = []
+        self.test = {"value": self.test_value, "value_dict": self.test_value_dict, "value_len": self.test_value_len, \
+                      "field": self.test_field, "field_dict": self.test_field_dict, 'field_len': self.test_field_len, \
+                      "ppos": self.test_ppos, "ppos_dict": self.test_ppos_dict, "ppos_len": self.test_ppos_len, \
+                      "pneg": self.test_pneg, "pneg_dict": self.test_pneg_dict, "pneg_len": self.test_pneg_len, \
+                      "sent": self.test_sent, "sent_dict": self.test_sent_dict, "sent_len": self.test_sent_len}
 
         self.valid_ppos_dict = Dictionary()
         self.valid_pneg_dict = Dictionary()
@@ -78,6 +88,11 @@ class Corpus(object):
         self.valid_value_len = []
         self.valid_sent = []
         self.valid_sent_len = []
+        self.valid = {"value": self.valid_value, "value_dict": self.valid_value_dict, "value_len": self.valid_value_len, \
+                     "field": self.valid_field, "field_dict": self.valid_field_dict, 'field_len': self.valid_field_len, \
+                     "ppos": self.valid_ppos, "ppos_dict": self.valid_ppos_dict, "ppos_len": self.valid_ppos_len, \
+                     "pneg": self.valid_pneg, "pneg_dict": self.valid_pneg_dict, "pneg_len": self.valid_pneg_len, \
+                     "sent": self.valid_sent, "sent_dict": self.valid_sent_dict, "sent_len": self.valid_sent_len}
         self.verbose = verbose
 
         self.data_path = [['train/train.sent', 'train/train.nb', 'train/train.box'], \

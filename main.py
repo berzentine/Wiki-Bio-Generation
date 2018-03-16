@@ -113,14 +113,14 @@ def get_data(data_source, num):
     pass
 
 
-train_batches = [x for x in range(0, len(train_data_padded[0]))]
-val_batches = [x for x in range(0, len(val_data_padded[0]))]
-test_batches = [x for x in range(0, len(test_data_padded[0]))]
+train_batches = [x for x in range(0, len(corpus.train["sent"]))]
+val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
+test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 
 def train():
     random.shuffle(train_batches)
     for batch_num in train_batches:
-        sent, ppos, pneg, field, value = get_data(train_data_padded, batch_num)
+        sent, ppos, pneg, field, value = get_data(corpus.train, batch_num)
         #TODO: model forward, loss calculation and debug print
     pass
 
@@ -140,7 +140,7 @@ try:
     for epoch in range(1, total_epochs+1):
         epoch_start_time = time.time()
         train()
-        val_loss = evaluate(val_data_padded, val_batches)
+        val_loss = evaluate(corpus.valid, val_batches)
         val_losses.append(val_loss)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.6f}s | valid loss {:5.6f} | '
@@ -166,7 +166,7 @@ with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 
 # Run on test data.
-test_loss = evaluate(test_data_padded, test_batches)
+test_loss = evaluate(corpus.test, test_batches)
 print('=' * 89)
 print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))

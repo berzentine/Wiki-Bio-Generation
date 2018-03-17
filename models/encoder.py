@@ -3,12 +3,10 @@ import torch.nn as nn
 
 
 class Encoder(nn.Module):
-    def __init__(self, z_size, hidden_size, batch_size, embed_size, bias=True):
+    def __init__(self, z_size, hidden_size, embed_size):
         super(Encoder, self).__init__()
         self.embed_size = embed_size
         self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.bias = bias
         self.z_size = z_size
         # Weights W_*x
         self.input_weights = nn.Linear(embed_size, 4 * hidden_size)
@@ -52,8 +50,7 @@ class Encoder(nn.Module):
         output = []
         steps = range(input_d.size(1))  # input_d = batch X seq_length X dim
         for i in steps:
-            hidden, cell_state = recurrence(input_d[i], input_z[i], hidden, cell_state)  # TODO: change here
-            output.append((hidden, cell_state))  # TODO change here
-
-        output = torch.cat(output, 0).view(input.size(0), *output[0].size()) # TODO change here
+            hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state)
+            output.append((hidden, cell_state))  # output[t][1] = hidden = batch x hidden ;; same for cell_state
+        #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
         return output, hidden, cell_state

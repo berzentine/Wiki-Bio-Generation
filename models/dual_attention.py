@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 class DualAttention(nn.Module):
     def __init__(self, encoder_hidden_size, decoder_hidden_size, field_embed_size):
+        super(DualAttention, self).__init__()
         self.lin1 = nn.Linear(encoder_hidden_size, decoder_hidden_size)
         self.lin2 = nn.Linear(decoder_hidden_size, decoder_hidden_size)
         self.lin3 = nn.Linear(field_embed_size, decoder_hidden_size)

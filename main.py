@@ -100,7 +100,8 @@ if verbose:
 
 
 #Build Model and move to CUDA
-model = Seq2SeqModel()
+model = Seq2SeqModel(sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
+                     value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hiiden_size, decoder_hiiden_size, decoder_num_layer)
 if args.cuda:
     model.cuda()
 

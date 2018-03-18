@@ -28,7 +28,7 @@ class Encoder(nn.Module):
         #self.weight_zhatx = Parameter(torch.Tensor(z_size, hidden_size))
 
     # Always batch first is needed
-    def forward(self, input_d, input_z, hidden, cell_state): # input vector, h_0 intialized as 0's and same for cell state
+    def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
         def recurrence(d_t, z_t, h_t_1, c_t_1):
             gates_vanilla = self.input_weights(d_t) + self.hidden_weights(h_t_1)
             ingate, forgetgate, cellgate, outgate = gates_vanilla.chunk(4, 1)
@@ -49,8 +49,9 @@ class Encoder(nn.Module):
 
         output = []
         steps = range(input_d.size(1))  # input_d = batch X seq_length X dim
+        hidden, cell_state = hidden
         for i in steps:
             hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state)
             output.append((hidden, cell_state))  # output[t][1] = hidden = batch x hidden ;; same for cell_state
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
-        return output, hidden, cell_state
+        return output, (hidden, cell_state)

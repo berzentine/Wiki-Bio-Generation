@@ -24,5 +24,5 @@ class Seq2SeqModel(nn.Module):
         encoder_initial_hidden = None
         encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
         # hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
-        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, input_z=input_z)
+        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z)
         return decoder_output, decoder_hidden

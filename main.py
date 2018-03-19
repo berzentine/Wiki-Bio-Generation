@@ -118,8 +118,7 @@ if args.cuda:
 
 #Build criterion and optimizer
 criterion = nn.CrossEntropyLoss()
-# optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
-optimizer = optim.SGD(lr=lr)
+optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
@@ -155,7 +154,16 @@ def train():
     random.shuffle(train_batches)
     for batch_num in train_batches:
         sent, ppos, pneg, field, value, target = get_data(corpus.train, batch_num)
-        #TODO: model forward, loss calculation and debug print
+        
+        # inti encoder = initial_encoder_hidden
+        # lookup for input_d and input_z (concatenated)
+        #output, (hidden, cell_state) = encoder.forward(input_d, input_z, initial_encoder_hidden)
+        # change the dimensions of hidden
+        #target_length = targets.size(1)
+        #loss = 0
+        # for loop:
+            # feed it to the decoder
+            #TODO: model forward, loss calculation and debug print
     pass
 
 

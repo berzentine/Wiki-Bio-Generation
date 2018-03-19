@@ -7,6 +7,7 @@ from models.encoder import Encoder
 class Seq2SeqModel(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size,\
                  value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hiiden_size, decoder_hiiden_size, decoder_num_layer):
+        super(Seq2SeqModel, self).__init__()
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
         self.value_lookup = nn.Embedding(value_vocab_size, value_embed_size)
         self.field_lookup = nn.Embedding(field_vocab_size, field_embed_size)

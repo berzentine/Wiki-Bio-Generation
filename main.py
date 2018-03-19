@@ -121,9 +121,30 @@ criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 optimizer = optim.SGD(lr=lr)
 
-def get_data(data_source, num):
-    #TODO: return cuda form of data
-    pass
+def get_data(data_source, num, evaluation):
+    batch = data_source['sent'][num]
+    field = data_source['field'][num]
+    value = data_source['value'][num]
+    ppos = data_source['ppos'][num]
+    pneg = data_source['pneg'][num]
+    sent = batch[:, 0:batch.size(1)-1]
+    target = batch[:, 1:batch.size(1)]
+    # data = torch.stack(data)
+    # target = torch.stack(target)
+    if cuda:
+        sent = sent.cuda()
+        target = target.cuda()
+        field = field.cuda()
+        value = value.cuda()
+        ppos = ppos.cuda()
+        pneg = pneg.cuda()
+    sent = Variable(sent, volatile=evaluation)
+    field = Variable(field, volatile=evaluation)
+    value = Variable(value, volatile=evaluation)
+    ppos = Variable(ppos, volatile=evaluation)
+    pneg = Variable(pneg, volatile=evaluation)
+    target = Variable(target)
+    return sent, ppos, pneg, field, value, target
 
 
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
@@ -133,7 +154,7 @@ test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 def train():
     random.shuffle(train_batches)
     for batch_num in train_batches:
-        sent, ppos, pneg, field, value = get_data(corpus.train, batch_num)
+        sent, ppos, pneg, field, value, target = get_data(corpus.train, batch_num)
         #TODO: model forward, loss calculation and debug print
     pass
 
@@ -141,7 +162,7 @@ def train():
 def evaluate(data_source, data_order):
     random.shuffle(data_order)
     for batch_num in data_order:
-        sent, ppos, pneg, field, value = get_data(data_source, batch_num)
+        sent, ppos, pneg, field, value, target = get_data(data_source, batch_num)
         #TODO: model forward, loss calculation and debug print
     pass
 

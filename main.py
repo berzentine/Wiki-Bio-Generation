@@ -22,13 +22,16 @@ parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
-parser.add_argument('--lr', type=int, default=0.1,help='learning rate')
+parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
+parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
-parser.add_argument('--emsize', type=int, default=200,help='size of word embeddings')
+parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
+parser.add_argument('--field_emsize', type=int, default=50,help='size of field embeddings')
+parser.add_argument('--pos_emsize', type=int, default=5,help='size of position embeddings')
 parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
-parser.add_argument('--nhid', type=int, default=100,help='number of hidden units per layer')
+parser.add_argument('--nhid', type=int, default=500,help='number of hidden units per layer')
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
@@ -41,10 +44,13 @@ total_epochs = args.epochs
 dropout = args.dropout
 seed = args.seed
 num_layers = args.nlayers
-emb_size = args.emsize
+word_emb_size = args.word_emsize
+field_emb_size = args.field_emsize
+pos_emb_size = args.pos_emsize
 hidden_size = args.nhid
 batchsize = args.batchsize
 data_path = args.data
+vocab_path = args.vocab
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
 lr = args.lr
@@ -72,7 +78,10 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_reader.Corpus(data_path, 1, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, 1, verbose)
+WORD_VOCAB_SIZE = len(corpus.word_vocab)
+FIELD_VOCAB_SIZE = len(corpus.field_vocab)
+POS_VOCAB_SIZE = len(corpus.pos_vocab)
 print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
@@ -98,10 +107,12 @@ if verbose:
 
     print('='*32)
 
-
 #Build Model and move to CUDA
-model = Seq2SeqModel(sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
-                     value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hiiden_size, decoder_hiiden_size, decoder_num_layer)
+model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=WORD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
+                     pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
+                     field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
+                     pneg_embed_size=pos_emb_size, encoder_hiiden_size=hidden_size, decoder_hiiden_size=hidden_size,
+                     decoder_num_layer=num_layers)
 if args.cuda:
     model.cuda()
 

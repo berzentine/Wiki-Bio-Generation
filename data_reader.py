@@ -89,6 +89,7 @@ class Corpus(object):
         ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
+        print('populating data')
         self.train_value, self.train_field,\
         self.train_ppos, self.train_pneg,\
         self.train_sent = self.new_populate_stores(path, self.data_path[0], top_k, verbose)
@@ -106,7 +107,7 @@ class Corpus(object):
         file = open(os.path.join(vocab_path, "word_vocab.txt"), "r")
         words = [line.split('\n')[0] for line in file]
         file = open(os.path.join(vocab_path, "field_vocab.txt"), "r")
-        fields = [int(line.split('\n')[0]) for line in file]
+        fields = [line.split('\n')[0] for line in file]
         self.word_vocab.add_word('<pad>')
         self.field_vocab.add_word('<pad>')
         self.pos_vocab.add_word('<pad>')
@@ -115,10 +116,10 @@ class Corpus(object):
         self.word_vocab.add_word('UNK')
         self.field_vocab.add_word('UNK')
         for word in words:
-            word, freq = word.split()
+            word, freq = word.split('\t')
             self.word_vocab.add_word(word)
         for field in fields:
-            field, freq = field.split()
+            field, freq = field.split('\t')
             self.field_vocab.add_word(field)
 
 

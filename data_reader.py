@@ -32,8 +32,7 @@ class Corpus(object):
     def __init__(self, path, vocab_path, top_k, verbose): # top_k is the number of sentences we would be generating
         self.field_vocab = Dictionary()
         self.word_vocab = Dictionary()
-        self.ppos_vocab = Dictionary()
-        self.pneg_vocab = Dictionary()
+        self.pos_vocab = Dictionary()
 
         self.train_ppos = []
         self.train_ppos_len = []
@@ -45,10 +44,10 @@ class Corpus(object):
         self.train_value_len = []
         self.train_sent = []
         self.train_sent_len = []
-        self.train = {"value": self.train_value, "value_len": self.train_value_len,\
-                      "field": self.train_field, "field_len": self.train_field_len,\
-                      "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,\
-                      "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,\
+        self.train = {"value": self.train_value, "value_len": self.train_value_len,
+                      "field": self.train_field, "field_len": self.train_field_len,
+                      "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,
+                      "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,
                       "sent": self.train_sent, "sent_len": self.train_sent_len}
 
         self.test_ppos = []
@@ -61,10 +60,10 @@ class Corpus(object):
         self.test_value_len = []
         self.test_sent = []
         self.test_sent_len = []
-        self.test = {"value": self.test_value, "value_len": self.test_value_len, \
-                      "field": self.test_field, 'field_len': self.test_field_len, \
-                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len, \
-                      "pneg": self.test_pneg, "pneg_len": self.test_pneg_len, \
+        self.test = {"value": self.test_value, "value_len": self.test_value_len,
+                      "field": self.test_field, 'field_len': self.test_field_len,
+                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
+                      "pneg": self.test_pneg, "pneg_len": self.test_pneg_len,
                       "sent": self.test_sent, "sent_len": self.test_sent_len}
 
         self.valid_ppos = []
@@ -77,16 +76,16 @@ class Corpus(object):
         self.valid_value_len = []
         self.valid_sent = []
         self.valid_sent_len = []
-        self.valid = {"value": self.valid_value, "value_len": self.valid_value_len, \
-                     "field": self.valid_field, 'field_len': self.valid_field_len, \
-                     "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len, \
-                     "pneg": self.valid_pneg,"pneg_len": self.valid_pneg_len, \
+        self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
+                     "field": self.valid_field, 'field_len': self.valid_field_len,
+                     "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
+                     "pneg": self.valid_pneg,"pneg_len": self.valid_pneg_len,
                      "sent": self.valid_sent, "sent_len": self.valid_sent_len}
-        self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab}
+        self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab}
         self.verbose = verbose
 
-        self.data_path = [['train/train.sent', 'train/train.nb', 'train/train.box'], \
-        ['test/test.sent', 'test/test.nb',  'test/test.box'], \
+        self.data_path = [['train/train.sent', 'train/train.nb', 'train/train.box'],
+        ['test/test.sent', 'test/test.nb',  'test/test.box'],
         ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
@@ -110,8 +109,7 @@ class Corpus(object):
         fields = [int(line.split('\n')[0]) for line in file]
         self.word_vocab.add_word('<pad>')
         self.field_vocab.add_word('<pad>')
-        self.ppos_vocab.add_word('<pad>')
-        self.pneg_vocab.add_word('<pad>')
+        self.pos_vocab.add_word('<pad>')
         self.word_vocab.add_word('<sos>')
         self.word_vocab.add_word('<eos>')
         self.word_vocab.add_word('UNK')
@@ -172,11 +170,11 @@ class Corpus(object):
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
 
-                self.ppos_vocab.add_word(j)
-                temp_ppos.append(self.ppos_vocab.word2idx[j])
+                self.pos_vocab.add_word(j)
+                temp_ppos.append(self.pos_vocab.word2idx[j])
 
-                self.pneg_vocab.add_word(len(line) - j - 1)
-                temp_pneg.append(self.pneg_vocab.word2idx[len(line) - j - 1])
+                self.pos_vocab.add_word(len(line) - j - 1)
+                temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
                 j += 1
 
             value.append(temp_value)

@@ -60,4 +60,4 @@ class Encoder(nn.Module):
             hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state)
             output.append(hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
-        return output, hidden
+        return output, (hidden,cell_state)

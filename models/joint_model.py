@@ -25,8 +25,9 @@ class Seq2SeqModel(nn.Module):
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, hidden_dim_encoder)
         encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
         # hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
-        # TODO: stack the encoder output here to better model it
-        print encoder_output.shape
-        print encoder_hidden.shape
+        #print torch.stack(encoder_output, dim=0).shape # (111L, 32L, 500L)
+        #print encoder_hidden.shape
+        # TODO: Fix from here: [encoder_hidden is concatenation of hidden and cell state]
+        # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
         decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden = torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden

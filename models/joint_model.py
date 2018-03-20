@@ -18,12 +18,13 @@ class Seq2SeqModel(nn.Module):
         self.decoder = Decoder(sent_embed_size, decoder_hiiden_size, encoder_hiiden_size, decoder_num_layer, sent_vocab_size, self.field_rep_embed_size)
         pass
 
-    def forward(self, sent, value, field, ppos, pneg):
+    def forward(self, sent, value, field, ppos, pneg, batch_size, hidden_dim_encoder):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         sent = self.sent_lookup(sent)
-        encoder_initial_hidden = None
+        encoder_initial_hidden = self.encoder.init_hidden(batch_size, hidden_dim_encoder)
         encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
         # hidden = (table_hidden[0].view(-1, table_hidden[0].size(0)*table_hidden[0].size(2)).unsqueeze(0), table_hidden[1].view(-1, table_hidden[1].size(0)*table_hidden[1].size(2)).unsqueeze(0) )
-        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, input_z=input_z)
+        # TODO: stack the encoder output here to better model it 
+        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden = encoder_output, input_z=input_z)
         return decoder_output, decoder_hidden

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 class Encoder(nn.Module):
-    def __init__(self, z_size, hidden_size, embed_size):
+    def __init__(self, z_size, hidden_size, embed_size, verbose):
         super(Encoder, self).__init__()
         self.embed_size = embed_size
         self.hidden_size = hidden_size
@@ -27,6 +27,7 @@ class Encoder(nn.Module):
         self.z_weights = nn.Linear(z_size, 2 * hidden_size)
         #self.weight_lx = Parameter(torch.Tensor(z_size, hidden_size))
         #self.weight_zhatx = Parameter(torch.Tensor(z_size, hidden_size))
+        self.verbose = verbose
 
     def init_hidden(self, batch_size, hidden_dim):
         return Variable(torch.zeros(batch_size, 2*hidden_dim))

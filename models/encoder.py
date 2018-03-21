@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 class Encoder(nn.Module):
     def __init__(self, z_size, hidden_size, embed_size):
@@ -27,6 +28,11 @@ class Encoder(nn.Module):
         #self.weight_lx = Parameter(torch.Tensor(z_size, hidden_size))
         #self.weight_zhatx = Parameter(torch.Tensor(z_size, hidden_size))
 
+    def init_hidden(self, batch_size, hidden_dim):
+        return Variable(torch.zeros(batch_size, 2*hidden_dim))
+        #return (autograd.Variable(weight.new(2*self.num_layers, batch_size, self.hidden_dim//2).zero_()), \
+                                   #autograd.Variable(weight.new(2*self.num_layers, batch_size, self.hidden_dim//2).zero_()))
+
     # Always batch first is needed
     def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
         def recurrence(d_t, z_t, h_t_1, c_t_1):
@@ -49,9 +55,9 @@ class Encoder(nn.Module):
 
         output = []
         steps = range(input_d.size(1))  # input_d = batch X seq_length X dim
-        hidden, cell_state = hidden
+        hidden, cell_state = hidden.chunk(2, 1)
         for i in steps:
             hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state)
-            output.append((hidden, cell_state))  # output[t][1] = hidden = batch x hidden ;; same for cell_state
+            output.append(hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
-        return output, (hidden, cell_state)
+        return output, (hidden,cell_state)

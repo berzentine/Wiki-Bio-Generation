@@ -19,7 +19,7 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
-parser.add_argument('--verbose', action='store_true', default=True, help='use Verbose')
+parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
@@ -87,12 +87,12 @@ print('='*32)
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
 
-"""corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
+corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], batchsize, verbose)
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
-"""
+
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
     print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
@@ -112,7 +112,7 @@ model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=WORD_VOCA
                      pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                      field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                      pneg_embed_size=pos_emb_size, encoder_hiiden_size=hidden_size, decoder_hiiden_size=hidden_size,
-                     decoder_num_layer=num_layers)
+                     decoder_num_layer=num_layers, verbose=verbose)
 if args.cuda:
     model.cuda()
 
@@ -176,7 +176,7 @@ def train():
         loss = 0
         for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
-            loss += criterion(decoder_output[:,di,:].squeeze(), target[:,di])
+            loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])
         total_loss += loss.data
         #total_words += sum(sent_length_batch)
         batch_loss += loss.data

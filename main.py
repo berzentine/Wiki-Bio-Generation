@@ -93,6 +93,8 @@ corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len =
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
 
+corpus.create_data_dictionaries()
+
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
     print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
@@ -105,6 +107,7 @@ if verbose:
     print(len(corpus.valid_ppos_len), len(corpus.valid_pneg_len), len(corpus.valid_field_len), len(corpus.valid_value_len), len(corpus.valid_sent_len))
     print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
 
+    print(len(corpus.train["sent"]))
     print('='*32)
 
 #Build Model and move to CUDA
@@ -128,6 +131,7 @@ def get_data(data_source, num, evaluation):
     pneg = data_source['pneg'][num]
     sent = batch[:, 0:batch.size(1)-1]
     target = batch[:, 1:batch.size(1)]
+    sent_len = data_source['sent_len'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:
@@ -143,68 +147,76 @@ def get_data(data_source, num, evaluation):
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     target = Variable(target)
-    return sent, ppos, pneg, field, value, target
+    return sent, sent_len, ppos, pneg, field, value, target
 
 # not doing anythin here, fix it
-train_batches = [x for x in range(0, len(corpus.train_sent))]
-data = dict()
-data['train'] = dict()
-data['train']['sent'] = corpus.train_sent
-data['train']['sent_len']  = corpus.train_sent_len
-data['train']['field']  = corpus.train_field
-data['train']['field_len'] = corpus.train_field_len
-data['train']['value'] = corpus.train_value
-data['train']['value_len'] = corpus.train_value_len
-data['train']['ppos'] = corpus.train_ppos
-data['train']['ppos_len'] = corpus.train_ppos_len
-data['train']['pneg']  = corpus.train_pneg
-data['train']['pneg_len'] = corpus.train_pneg_len
-#train_batches = [x for x in range(0, len(corpus.train["sent"]))]
-#val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
-#test_batches = [x for x in range(0, len(corpus.test["sent"]))]
+# train_batches = [x for x in range(0, len(corpus.train_sent))]
+# data = dict()
+# data['train'] = dict()
+# data['train']['sent'] = corpus.train_sent
+# data['train']['sent_len']  = corpus.train_sent_len
+# data['train']['field']  = corpus.train_field
+# data['train']['field_len'] = corpus.train_field_len
+# data['train']['value'] = corpus.train_value
+# data['train']['value_len'] = corpus.train_value_len
+# data['train']['ppos'] = corpus.train_ppos
+# data['train']['ppos_len'] = corpus.train_ppos_len
+# data['train']['pneg']  = corpus.train_pneg
+# data['train']['pneg_len'] = corpus.train_pneg_len
+train_batches = [x for x in range(0, len(corpus.train["sent"]))]
+val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
+test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 
 def train():
     batch_loss = batch_words = i = 0
-    total_loss = 0
+    total_loss = total_words = 0
     model.train()
     start_time = time.time()
     random.shuffle(train_batches)
     for batch_num in train_batches:
         i+=1
-        sent, ppos, pneg, field, value, target = get_data(data['train'], batch_num, False)
+        sent, sent_len, ppos, pneg, field, value, target = get_data(corpus.train, batch_num, False)
+        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, hidden_size)
+        loss = 0
+        for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
+            #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
+            loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
+        total_loss += loss.data
+        total_words += sum(sent_len)
+        batch_loss += loss.data
+        batch_words += sum(sent_len)
+        optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm(model.parameters(), clip)
+        optimizer.step()
+        #print batch_loss[0]
+        if i % log_interval == 0 and i > 0:
+            cur_loss = batch_loss[0] / batch_words
+            elapsed = time.time() - start_time
+            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
+                  'loss {:5.6f} | ppl {:8.6f}'.format(
+                epoch, i, len(train_batches), lr, elapsed * 1000 / log_interval, cur_loss, math.exp(cur_loss)))
+            batch_loss = 0
+            batch_words = 0
+            start_time = time.time()
+    train_losses.append(total_loss[0]/total_words)
+
+
+def evaluate(data_source, data_order):
+    total_loss = total_words = 0
+    model.eval()
+    start_time = time.time()
+    random.shuffle(data_order)
+    for batch_num in data_order:
+        sent, sent_len, ppos, pneg, field, value, target = get_data(data_source, batch_num, True)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, hidden_size)
         loss = 0
         for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
             loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])
         total_loss += loss.data
-        #total_words += sum(sent_length_batch)
-        batch_loss += loss.data
-        #batch_words += sum(sent_length_batch)
-        optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), clip)
-        optimizer.step()
-        print batch_loss[0]
-        """if i % log_interval == 0 and i > 0:
-            #cur_loss = batch_loss[0] / batch_words
-            elapsed = time.time() - start_time
-            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
-                  'loss {:5.6f} | ppl {:8.6f}'.format(
-                epoch, i, len(train_sent), lr, elapsed * 1000 / log_interval, cur_loss, math.exp(cur_loss)))
-            batch_loss = 0
-            batch_words = 0
-            start_time = time.time()
-    train_losses.append(total_loss[0]/total_words)"""
-
-
-def evaluate(data_source, data_order):
-    random.shuffle(data_order)
-    for batch_num in data_order:
-        sent, ppos, pneg, field, value, target = get_data(data_source, batch_num)
-        #TODO: model forward, loss calculation and debug print
-    pass
-
+        total_words += sum(sent_len)
+    return total_loss[0]/total_words
 
 best_val_loss = None
 val_losses = []
@@ -212,7 +224,7 @@ train_losses = []
 for epoch in range(1, total_epochs+1):
     epoch_start_time = time.time()
     train()
-"""try:
+try:
     for epoch in range(1, total_epochs+1):
         epoch_start_time = time.time()
         train()
@@ -233,9 +245,9 @@ for epoch in range(1, total_epochs+1):
             lr /= 2
 except KeyboardInterrupt:
     print('-' * 89)
-    print('Exiting from training early')"""
+    print('Exiting from training early')
 
-"""plot(train_losses, val_losses, plot_save_path)
+plot(train_losses, val_losses, plot_save_path)
 
 # Load the best saved model.
 with open(model_save_path+"best_model.pth", 'rb') as f:
@@ -246,4 +258,4 @@ test_loss = evaluate(corpus.test, test_batches)
 print('=' * 89)
 print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))
-print('=' * 89)"""
+print('=' * 89)

@@ -44,11 +44,6 @@ class Corpus(object):
         self.train_value_len = []
         self.train_sent = []
         self.train_sent_len = []
-        self.train = {"value": self.train_value, "value_len": self.train_value_len,
-                      "field": self.train_field, "field_len": self.train_field_len,
-                      "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,
-                      "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,
-                      "sent": self.train_sent, "sent_len": self.train_sent_len}
 
         self.test_ppos = []
         self.test_ppos_len = []
@@ -60,11 +55,6 @@ class Corpus(object):
         self.test_value_len = []
         self.test_sent = []
         self.test_sent_len = []
-        self.test = {"value": self.test_value, "value_len": self.test_value_len,
-                      "field": self.test_field, 'field_len': self.test_field_len,
-                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
-                      "pneg": self.test_pneg, "pneg_len": self.test_pneg_len,
-                      "sent": self.test_sent, "sent_len": self.test_sent_len}
 
         self.valid_ppos = []
         self.valid_ppos_len = []
@@ -76,11 +66,6 @@ class Corpus(object):
         self.valid_value_len = []
         self.valid_sent = []
         self.valid_sent_len = []
-        self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
-                     "field": self.valid_field, 'field_len': self.valid_field_len,
-                     "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
-                     "pneg": self.valid_pneg,"pneg_len": self.valid_pneg_len,
-                     "sent": self.valid_sent, "sent_len": self.valid_sent_len}
         self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab}
         self.verbose = verbose
 
@@ -89,7 +74,6 @@ class Corpus(object):
         ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
-        print('populating data')
         self.train_value, self.train_field,\
         self.train_ppos, self.train_pneg,\
         self.train_sent = self.new_populate_stores(path, self.data_path[0], top_k, verbose)
@@ -101,6 +85,27 @@ class Corpus(object):
         self.valid_value, self.valid_field, \
         self.valid_ppos, self.valid_pneg, \
         self.valid_sent = self.new_populate_stores(path, self.data_path[2], top_k, verbose)
+
+
+    def create_data_dictionaries(self):
+        self.train = {"value": self.train_value, "value_len": self.train_value_len,
+                      "field": self.train_field, "field_len": self.train_field_len,
+                      "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,
+                      "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,
+                      "sent": self.train_sent, "sent_len": self.train_sent_len}
+        self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
+                      "field": self.valid_field, 'field_len': self.valid_field_len,
+                      "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
+                      "pneg": self.valid_pneg,"pneg_len": self.valid_pneg_len,
+                      "sent": self.valid_sent, "sent_len": self.valid_sent_len}
+        self.test = {"value": self.test_value, "value_len": self.test_value_len,
+                     "field": self.test_field, 'field_len': self.test_field_len,
+                     "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
+                     "pneg": self.test_pneg, "pneg_len": self.test_pneg_len,
+                     "sent": self.test_sent, "sent_len": self.test_sent_len}
+
+
+
 
 
     def populate_vocab(self, vocab_path, verbose):

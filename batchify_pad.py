@@ -15,7 +15,8 @@ def batchify(data, batchsize, verbose):
     pneg_length = []
 
     datum = sorted(zip(data[4], data[0], data[1], data[2], data[3]), key=lambda tup: len(tup[0]))
-    for d in range(0,len(datum), batchsize):
+    total_batches = len(datum)//batchsize
+    for d in range(0,total_batches):
         temp_sentences_actual_length = []
         temp_sentences_padded = []
         temp_table_field_actual_length = []

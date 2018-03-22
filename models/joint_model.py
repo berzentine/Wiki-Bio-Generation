@@ -6,7 +6,7 @@ from models.encoder import Encoder
 
 class Seq2SeqModel(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size,\
-                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hiiden_size, decoder_hiiden_size, decoder_num_layer, verbose, cuda_var):
+                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var):
         super(Seq2SeqModel, self).__init__()
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
         self.value_lookup = nn.Embedding(value_vocab_size, value_embed_size)
@@ -14,8 +14,8 @@ class Seq2SeqModel(nn.Module):
         self.ppos_lookup = nn.Embedding(ppos_vocab_size, ppos_embed_size)
         self.pneg_lookup = nn.Embedding(pneg_vocab_size, pneg_embed_size)
         self.field_rep_embed_size = field_embed_size+ppos_embed_size+pneg_embed_size
-        self.encoder = Encoder(self.field_rep_embed_size, encoder_hiiden_size, value_embed_size, verbose)
-        self.decoder = Decoder(sent_embed_size, decoder_hiiden_size, encoder_hiiden_size, decoder_num_layer, sent_vocab_size, self.field_rep_embed_size, verbose)
+        self.encoder = Encoder(self.field_rep_embed_size, encoder_hidden_size, value_embed_size, verbose)
+        self.decoder = Decoder(sent_embed_size, decoder_hidden_size, encoder_hidden_size, decoder_num_layer, sent_vocab_size, self.field_rep_embed_size, verbose)
         self.verbose = verbose
         self.cuda_var = cuda_var
 

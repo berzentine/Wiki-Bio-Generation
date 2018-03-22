@@ -38,3 +38,26 @@ class Seq2SeqModel(nn.Module):
         # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
         decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden
+
+    def generate(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary):
+        input_d = self.value_lookup(value)
+        input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
+        encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
+        if self.cuda_var:
+            encoder_initial_hidden = encoder_initial_hidden.cuda()
+        encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
+        encoder_output = torch.stack(encoder_output, dim=0)
+        encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
+        gen_seq = []
+        gen_seq.append('<sos>')
+        curr_input = self.sent_lookup(start_symbol) # TODO: change here to dic look up from data reader
+        prev_hidden = encoder_hidden
+        for i in range(max_length):
+            decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+            max_val, max_idx = torch.max(decoder_output, 0)
+            curr_input = max_idx
+            gen_seq.append(dictionary.idx2word[max_idx])
+            if curr_input == dictionary.word2idx[end_symbol]:
+                gen_seq.append('<eos>')
+                break
+        return gen_seq

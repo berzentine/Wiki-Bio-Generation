@@ -1,3 +1,4 @@
 data/Wiki-Data/wikipedia-biography-dataset/
+data/Wiki-Data/wikipedia-biography-dataset-dummy/
 *.pyc
 .DS_Store

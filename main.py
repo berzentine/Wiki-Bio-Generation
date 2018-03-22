@@ -199,6 +199,7 @@ def train():
             batch_loss = 0
             batch_words = 0
             start_time = time.time()
+        del sent, sent_len, ppos, pneg, field, value, target, decoder_output, decoder_hidden
     train_losses.append(total_loss[0]/total_words)
 
 

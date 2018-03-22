@@ -210,7 +210,7 @@ def evaluate(data_source, data_order):
     random.shuffle(data_order)
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, target = get_data(data_source, batch_num, True)
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, hidden_size)
+        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
         for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
@@ -222,9 +222,6 @@ def evaluate(data_source, data_order):
 best_val_loss = None
 val_losses = []
 train_losses = []
-for epoch in range(1, total_epochs+1):
-    epoch_start_time = time.time()
-    train()
 try:
     for epoch in range(1, total_epochs+1):
         epoch_start_time = time.time()
@@ -238,6 +235,7 @@ try:
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
         if not best_val_loss or val_loss < best_val_loss:
+            print("Saving best model")
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
             best_val_loss = val_loss

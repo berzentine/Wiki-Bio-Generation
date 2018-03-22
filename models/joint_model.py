@@ -8,6 +8,7 @@ class Seq2SeqModel(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size,\
                  value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var):
         super(Seq2SeqModel, self).__init__()
+        self.encoder_hidden_size = encoder_hiiden_size
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
         self.value_lookup = nn.Embedding(value_vocab_size, value_embed_size)
         self.field_lookup = nn.Embedding(field_vocab_size, field_embed_size)
@@ -19,11 +20,11 @@ class Seq2SeqModel(nn.Module):
         self.verbose = verbose
         self.cuda_var = cuda_var
 
-    def forward(self, sent, value, field, ppos, pneg, batch_size, hidden_dim_encoder):
+    def forward(self, sent, value, field, ppos, pneg, batch_size):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         sent = self.sent_lookup(sent)
-        encoder_initial_hidden = self.encoder.init_hidden(batch_size, hidden_dim_encoder)
+        encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
         encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)

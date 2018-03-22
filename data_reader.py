@@ -159,7 +159,7 @@ class Corpus(object):
         file = open(os.path.join(path, data_path[2]), "r")
         count = 0
         for line in file:
-            if count == 20000:
+            if count == 20:
                break
             count += 1
             temp_ppos = []

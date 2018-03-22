@@ -39,6 +39,8 @@ class Seq2SeqModel(nn.Module):
         decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden
 
+    # TODO: should it be given as a batch? In which case how to handle the break condition in this method?
+    
     def generate(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
@@ -50,7 +52,7 @@ class Seq2SeqModel(nn.Module):
         encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         gen_seq = []
         gen_seq.append('<sos>')
-        curr_input = self.sent_lookup(start_symbol) # TODO: change here to dic look up from data reader
+        curr_input = self.sent_lookup(start_symbol) # TODO: change here to look and handle batches
         prev_hidden = encoder_hidden
         for i in range(max_length):
             decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)

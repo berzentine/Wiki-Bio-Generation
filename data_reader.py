@@ -140,8 +140,8 @@ class Corpus(object):
         field = []
         value = []
         z = 0
-        #for s in range(len(no_sentences)):
-        for s in range(20000):
+        for s in range(len(no_sentences)):
+        #for s in range(20000):
             current = sentences[z:z + no_sentences[s]]
             z = z + no_sentences[s]
             current = current[0:top_k]
@@ -159,8 +159,8 @@ class Corpus(object):
         file = open(os.path.join(path, data_path[2]), "r")
         count = 0
         for line in file:
-            if count == 20000:
-               break
+            #if count == 20000:
+            #   break
             count += 1
             temp_ppos = []
             temp_pneg = []

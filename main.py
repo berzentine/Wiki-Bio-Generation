@@ -176,7 +176,7 @@ def train():
     for batch_num in train_batches:
         i+=1
         sent, sent_len, ppos, pneg, field, value, target = get_data(corpus.train, batch_num, False)
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, hidden_size)
+        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
         for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)

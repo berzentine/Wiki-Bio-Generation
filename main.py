@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
+parser.add_argument('--batchsize', type=int, default=4,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
@@ -34,8 +34,9 @@ parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
 parser.add_argument('--nhid', type=int, default=500,help='number of hidden units per layer')
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
-parser.add_argument('--log_interval', type=float, default=500,help='log interval')
+parser.add_argument('--log_interval', type=float, default=2,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
+parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
 
 args = parser.parse_args()
 cuda = args.cuda
@@ -56,7 +57,7 @@ model_save_path = args.model_save_path
 lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
-# TODO: z vector should be of same dimension as hidden?
+max_length = args.max_sent_length
 
 
 ###############################################################################
@@ -210,6 +211,9 @@ def evaluate(data_source, data_order):
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, target = get_data(data_source, batch_num, True)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
+        """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
+                                                    corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
+
         loss = 0
         for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)

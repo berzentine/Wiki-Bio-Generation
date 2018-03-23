@@ -34,6 +34,6 @@ class Decoder(nn.Module):
         # out = self.tanh(self.lin1(concat_v))
         out = output
         out = self.lin2(out)
-        out = out.view(out.size(1), out.size(0), out.size(2))
+        #out = out.view(out.size(1), out.size(0), out.size(2))
         if self.verbose: print(out.size())
         return out, hidden

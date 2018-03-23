@@ -171,6 +171,9 @@ class Corpus(object):
             j = 0
             for l in line:  # address each part in the table for f, p+, p-, and value
                 word = l.split(':')[0]
+                value = l.split(':')[1]
+                if '<none>' in value or value.strip()=='' or word.strip()=='':
+                    continue
                 if word in self.field_vocab.word2idx:
                     temp_field.append(self.field_vocab.word2idx[word])
                 else:

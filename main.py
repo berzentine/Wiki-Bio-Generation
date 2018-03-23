@@ -254,7 +254,6 @@ except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')
 
-plot(train_losses, val_losses, plot_save_path)
 
 # Load the best saved model.
 with open(model_save_path+"best_model.pth", 'rb') as f:
@@ -266,3 +265,5 @@ print('=' * 89)
 print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))
 print('=' * 89)
+
+plot(train_losses, val_losses, plot_save_path)

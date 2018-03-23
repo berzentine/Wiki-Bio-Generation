@@ -127,10 +127,23 @@ class Corpus(object):
             field, freq = field.split('\t')
             self.field_vocab.add_word(field)
 
-    def reverse_pos(line, pointers, temp_ppos):
-        print temp_ppos
-        print pointers
-        return []
+    def reverse_pos(self, line, pointers, temp_ppos):
+        #print temp_ppos
+        temp_pneg = []
+        current = []
+        for i in range(len(temp_ppos)):
+            if temp_ppos[i]==1:
+                temp_pneg+= current[::-1] # append whatever in buffer, in reverse fashion
+                current = [] # start a new buffer
+                current.append(temp_ppos[i]) # append in buffer
+            else:
+                current.append(temp_ppos[i]) # append in buffer
+
+        temp_pneg+= current[::-1]
+        #print temp_ppos
+        #print temp_pneg
+        #print '======'
+        return temp_pneg
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):
         # handle the sentences # handle the nb # tokenize the appendings
         file = open(os.path.join(path, data_path[0]), "r")
@@ -176,18 +189,16 @@ class Corpus(object):
             field_prev = ""
             for l in line:  # address each part in the table for f, p+, p-, and value
                 word = l.split(':')[0]
-                value = l.split(':')[1]
-                if '<none>' in value or value.strip()=='' or word.strip()=='':
+                word_value = l.split(':')[1]
+                if '<none>' in word_value or word_value.strip()=='' or word.strip()=='':
                     continue
-
-
-                """word = l.split(':')[0].rsplit('_',1)[0] # field_name
+                word = l.split(':')[0].rsplit('_',1)[0] # field_name
                 if field_prev!=word:
                     field_prev = word
                     pointers.append(j)
                 j += 1
                 # TODO: handle <none> for the split case, would give an error
-                pos = l.split(':')[0].rsplit('_',1)[1]"""
+                pos = l.split(':')[0].rsplit('_',1)[1]
                 if word in self.field_vocab.word2idx:
                     temp_field.append(self.field_vocab.word2idx[word])
                 else:
@@ -198,12 +209,13 @@ class Corpus(object):
                     temp_value.append(self.word_vocab.word2idx[word])
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
-                if int(pos)<30:
+
+                if int(pos)<=30:
                     self.pos_vocab.add_word(pos)
                     temp_ppos.append(self.pos_vocab.word2idx[pos])
                 else:
-                    temp_ppos.append(self.pos_vocab.word2idx['30'])
-
+                    self.pos_vocab.add_word(30)
+                    temp_ppos.append(self.pos_vocab.word2idx[30])
 
                 """if j>30:
                     self.pos_vocab.add_word(30)
@@ -219,7 +231,7 @@ class Corpus(object):
                     self.pos_vocab.add_word(len(line) - j - 1)
                     temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
                 j += 1"""
-            temp_pneg = reverse_pos(line, pointers, temp_ppos)
+            temp_pneg = self.reverse_pos(line, pointers, temp_ppos)
             # TODO: call here to reverse it and redo the job for pneg
             value.append(temp_value)
             field.append(temp_field)

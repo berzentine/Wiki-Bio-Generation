@@ -20,6 +20,7 @@ from torch.autograd import Variable
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
+parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=4,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
@@ -41,6 +42,7 @@ parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sent
 args = parser.parse_args()
 cuda = args.cuda
 verbose = args.verbose
+limit = args.limit
 total_epochs = args.epochs
 dropout = args.dropout
 seed = args.seed
@@ -79,7 +81,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_reader.Corpus(data_path, vocab_path, 1, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, 1, limit, verbose)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)

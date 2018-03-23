@@ -29,7 +29,7 @@ class Data(object):
 
 
 class Corpus(object):
-    def __init__(self, path, vocab_path, top_k, verbose): # top_k is the number of sentences we would be generating
+    def __init__(self, path, vocab_path, top_k, limit, verbose): # top_k is the number of sentences we would be generating
         self.field_vocab = Dictionary()
         self.word_vocab = Dictionary()
         self.pos_vocab = Dictionary()
@@ -76,15 +76,15 @@ class Corpus(object):
         self.populate_vocab(vocab_path, verbose)
         self.train_value, self.train_field,\
         self.train_ppos, self.train_pneg,\
-        self.train_sent = self.new_populate_stores(path, self.data_path[0], top_k, verbose)
+        self.train_sent = self.new_populate_stores(path, self.data_path[0], top_k, limit, verbose)
 
         self.test_value, self.test_field, \
         self.test_ppos, self.test_pneg, \
-        self.test_sent = self.new_populate_stores(path, self.data_path[1], top_k, verbose)
+        self.test_sent = self.new_populate_stores(path, self.data_path[1], top_k, limit, verbose)
 
         self.valid_value, self.valid_field, \
         self.valid_ppos, self.valid_pneg, \
-        self.valid_sent = self.new_populate_stores(path, self.data_path[2], top_k, verbose)
+        self.valid_sent = self.new_populate_stores(path, self.data_path[2], top_k, limit, verbose)
 
 
     def create_data_dictionaries(self):
@@ -128,7 +128,7 @@ class Corpus(object):
             self.field_vocab.add_word(field)
 
 
-    def new_populate_stores(self, path, data_path, top_k, verbose):
+    def new_populate_stores(self, path, data_path, top_k, limit, verbose):
         # handle the sentences # handle the nb # tokenize the appendings
         file = open(os.path.join(path, data_path[0]), "r")
         sentences = [line.split('\n')[0] for line in file]
@@ -140,8 +140,9 @@ class Corpus(object):
         field = []
         value = []
         z = 0
-        for s in range(len(no_sentences)):
-        #for s in range(20000):
+        size = int(limit*len(no_sentences))
+        # for s in range(len(no_sentences)):
+        for s in range(size):
             current = sentences[z:z + no_sentences[s]]
             z = z + no_sentences[s]
             current = current[0:top_k]
@@ -159,8 +160,8 @@ class Corpus(object):
         file = open(os.path.join(path, data_path[2]), "r")
         count = 0
         for line in file:
-            #if count == 20000:
-            #   break
+            if count == size:
+              break
             count += 1
             temp_ppos = []
             temp_pneg = []

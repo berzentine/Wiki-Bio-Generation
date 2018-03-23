@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from models.decoder import Decoder
 from models.encoder import Encoder
+from torch.autograd import Variable
 
 
 class Seq2SeqModel(nn.Module):
@@ -23,7 +24,9 @@ class Seq2SeqModel(nn.Module):
     def forward(self, sent, value, field, ppos, pneg, batch_size):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
+        #print sent
         sent = self.sent_lookup(sent)
+        #print sent
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
@@ -40,7 +43,7 @@ class Seq2SeqModel(nn.Module):
         return decoder_output, decoder_hidden
 
     # TODO: should it be given as a batch? In which case how to handle the break condition in this method?
-    
+
     def generate(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
@@ -52,14 +55,25 @@ class Seq2SeqModel(nn.Module):
         encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         gen_seq = []
         gen_seq.append('<sos>')
+        #print start_symbol
+        # hsould be a 1 X 1 long tensor
+        start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
+        #print start_symbol
         curr_input = self.sent_lookup(start_symbol) # TODO: change here to look and handle batches
         prev_hidden = encoder_hidden
+        #print 'start', curr_input.shape  ## start (1L, 1L, 400L)
         for i in range(max_length):
             decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
-            max_val, max_idx = torch.max(decoder_output, 0)
-            curr_input = max_idx
-            gen_seq.append(dictionary.idx2word[max_idx])
-            if curr_input == dictionary.word2idx[end_symbol]:
-                gen_seq.append('<eos>')
+            #print 'decoder out', decoder_output.squeeze().shape ## decoder out (20003L,)
+            max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
+            #print 'max index', int(max_idx)
+            curr_input = self.sent_lookup(max_idx).unsqueeze(0)
+            #print 'new curr', curr_input.shape
+            gen_seq.append(dictionary.idx2word[int(max_idx)])
+            #print gen_seq
+            if dictionary.idx2word[int(max_idx)] == '<eos>':
+                #gen_seq.append('<eos>')
+                print 'breaked', '='*32
                 break
+        print gen_seq
         return gen_seq

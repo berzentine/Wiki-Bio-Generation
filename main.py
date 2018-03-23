@@ -116,7 +116,7 @@ if verbose:
 model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=WORD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                      pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                      field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
-                     pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size//4, decoder_hidden_size=hidden_size//4,
+                     pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
                      decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda)
 if args.cuda:
     model.cuda()

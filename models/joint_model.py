@@ -39,7 +39,7 @@ class Seq2SeqModel(nn.Module):
         #print encoder_hidden.shape
         # TODO: Fix from here: [encoder_hidden is concatenation of hidden and cell state]
         # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
-        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output, decoder_hidden = self.decoder.forward_plain(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden
 
     # TODO: should it be given as a batch? In which case how to handle the break condition in this method?

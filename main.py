@@ -123,7 +123,7 @@ if args.cuda:
 
 #Build criterion and optimizer
 criterion = nn.CrossEntropyLoss(ignore_index=0)
-optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]

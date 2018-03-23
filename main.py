@@ -122,7 +122,7 @@ if args.cuda:
     model.cuda()
 
 #Build criterion and optimizer
-criterion = nn.CrossEntropyLoss(ignore_index=0)
+criterion = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 def get_data(data_source, num, evaluation):

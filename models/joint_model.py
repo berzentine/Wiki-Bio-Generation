@@ -58,6 +58,8 @@ class Seq2SeqModel(nn.Module):
         #print start_symbol
         # hsould be a 1 X 1 long tensor
         start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
+        if self.cuda_var:
+            start_symbol = start_symbol.cuda()
         #print start_symbol
         curr_input = self.sent_lookup(start_symbol) # TODO: change here to look and handle batches
         prev_hidden = encoder_hidden

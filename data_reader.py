@@ -181,12 +181,18 @@ class Corpus(object):
                     temp_value.append(self.word_vocab.word2idx[word])
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
+                # need to fix here
 
                 self.pos_vocab.add_word(j)
-                temp_ppos.append(self.pos_vocab.word2idx[j])
-
+                if j>30:
+                    temp_ppos.append(30)
+                else:
+                    temp_ppos.append(self.pos_vocab.word2idx[j])
                 self.pos_vocab.add_word(len(line) - j - 1)
-                temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
+                if (len(line) - j - 1)>30:
+                    temp_pneg.append(30)
+                else:
+                    temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
                 j += 1
 
             value.append(temp_value)

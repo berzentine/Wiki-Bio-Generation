@@ -22,7 +22,7 @@ parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--batchsize', type=int, default=4,help='batchsize')
+parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')

@@ -35,7 +35,7 @@ parser.add_argument('--nhid', type=int, default=500,help='number of hidden units
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=2,help='log interval')
-parser.add_argument('--epochs', type=int, default=50,help='epochs')
+parser.add_argument('--epochs', type=int, default=2,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
 
 args = parser.parse_args()
@@ -89,7 +89,7 @@ corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_fie
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
-corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], batchsize, verbose)
+corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], 1, verbose)
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
@@ -204,7 +204,20 @@ def train():
     train_losses.append(total_loss[0]/total_words)
 
 
-def evaluate(data_source, data_order):
+def test_evaluate(data_source, data_order, test):
+    total_loss = total_words = 0
+    model.eval()
+    start_time = time.time()
+    random.shuffle(data_order)
+    for batch_num in data_order:
+        sent, sent_len, ppos, pneg, field, value, target = get_data(data_source, batch_num, True)
+        gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
+                                                corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
+
+
+    return 0 # TODO
+
+def evaluate(data_source, data_order, test):
     total_loss = total_words = 0
     model.eval()
     start_time = time.time()
@@ -230,7 +243,7 @@ try:
     for epoch in range(1, total_epochs+1):
         epoch_start_time = time.time()
         train()
-        val_loss = evaluate(corpus.valid, val_batches)
+        val_loss = evaluate(corpus.valid, val_batches, test=False)
         val_losses.append(val_loss)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.6f}s | valid loss {:5.6f} | '
@@ -257,7 +270,7 @@ with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 
 # Run on test data.
-test_loss = evaluate(corpus.test, test_batches)
+test_loss = test_evaluate(corpus.test, test_batches, test=True)
 print('=' * 89)
 print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))

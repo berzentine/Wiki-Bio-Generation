@@ -175,13 +175,19 @@ class Corpus(object):
             j = 0
             field_prev = ""
             for l in line:  # address each part in the table for f, p+, p-, and value
-                word = l.split(':')[0].rsplit('_',1)[0] # field_name
+                word = l.split(':')[0]
+                value = l.split(':')[1]
+                if '<none>' in value or value.strip()=='' or word.strip()=='':
+                    continue
+
+
+                """word = l.split(':')[0].rsplit('_',1)[0] # field_name
                 if field_prev!=word:
                     field_prev = word
                     pointers.append(j)
                 j += 1
                 # TODO: handle <none> for the split case, would give an error
-                pos = l.split(':')[0].rsplit('_',1)[1]
+                pos = l.split(':')[0].rsplit('_',1)[1]"""
                 if word in self.field_vocab.word2idx:
                     temp_field.append(self.field_vocab.word2idx[word])
                 else:

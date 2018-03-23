@@ -1,6 +1,6 @@
 # should take test data as input
 # spit out the generated text and the original text
-def (data_source, data_order, test):
+def x(data_source, data_order, test):
     total_loss = total_words = 0
     model.eval()
     start_time = time.time()

@@ -127,6 +127,24 @@ class Corpus(object):
             field, freq = field.split('\t')
             self.field_vocab.add_word(field)
 
+    def reverse_pos(self, temp_ppos):
+        #print temp_ppos
+        temp_pneg = []
+        current = []
+        for i in range(len(temp_ppos)):
+            if temp_ppos[i]==1:
+                temp_pneg+= current[::-1] # append whatever in buffer, in reverse fashion
+                current = [] # start a new buffer
+                current.append(temp_ppos[i]) # append in buffer
+            else:
+                current.append(temp_ppos[i]) # append in buffer
+
+        temp_pneg+= current[::-1]
+        #print temp_ppos
+        #print temp_pneg
+        #print '======'
+        return temp_pneg
+
 
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):
         # handle the sentences # handle the nb # tokenize the appendings
@@ -167,10 +185,18 @@ class Corpus(object):
             temp_pneg = []
             temp_field = []
             temp_value = []
+            pointers = []
             line = line.split('\n')[0].split('\t')
             j = 0
+            field_prev = ""
             for l in line:  # address each part in the table for f, p+, p-, and value
                 word = l.split(':')[0]
+                field_value = l.split(':')[1]
+                if '<none>' in field_value or field_value.strip()=='' or word.strip()=='':
+                    continue
+
+                word = l.split(':')[0].rsplit('_',1)[0] # field_name
+                pos = l.split(':')[0].rsplit('_',1)[1]
                 if word in self.field_vocab.word2idx:
                     temp_field.append(self.field_vocab.word2idx[word])
                 else:
@@ -181,20 +207,30 @@ class Corpus(object):
                     temp_value.append(self.word_vocab.word2idx[word])
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
-                # need to fix here
-
-                self.pos_vocab.add_word(j)
-                if j>30:
-                    temp_ppos.append(30)
+                if int(pos)<30:
+                    self.pos_vocab.add_word(pos)
+                    temp_ppos.append(self.pos_vocab.word2idx[pos])
                 else:
+                    self.pos_vocab.add_word(30)
+                    temp_ppos.append(self.pos_vocab.word2idx[30])
+
+
+                """if j>30:
+                    self.pos_vocab.add_word(30)
+                    temp_ppos.append(self.pos_vocab.word2idx[30])
+                else:
+                    self.pos_vocab.add_word(j)
                     temp_ppos.append(self.pos_vocab.word2idx[j])
-                self.pos_vocab.add_word(len(line) - j - 1)
-                if (len(line) - j - 1)>30:
-                    temp_pneg.append(30)
-                else:
-                    temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
-                j += 1
 
+                if (len(line) - j - 1)>30:
+                    self.pos_vocab.add_word(30)
+                    temp_pneg.append(self.pos_vocab.word2idx[30])
+                else:
+                    self.pos_vocab.add_word(len(line) - j - 1)
+                    temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
+                j += 1"""
+            temp_pneg = self.reverse_pos(temp_ppos)
+            # TODO: call here to reverse it and redo the job for pneg
             value.append(temp_value)
             field.append(temp_field)
             ppos.append(temp_ppos)

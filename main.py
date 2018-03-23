@@ -151,20 +151,7 @@ def get_data(data_source, num, evaluation):
     target = Variable(target)
     return sent, sent_len, ppos, pneg, field, value, target
 
-# not doing anythin here, fix it
-# train_batches = [x for x in range(0, len(corpus.train_sent))]
-# data = dict()
-# data['train'] = dict()
-# data['train']['sent'] = corpus.train_sent
-# data['train']['sent_len']  = corpus.train_sent_len
-# data['train']['field']  = corpus.train_field
-# data['train']['field_len'] = corpus.train_field_len
-# data['train']['value'] = corpus.train_value
-# data['train']['value_len'] = corpus.train_value_len
-# data['train']['ppos'] = corpus.train_ppos
-# data['train']['ppos_len'] = corpus.train_ppos_len
-# data['train']['pneg']  = corpus.train_pneg
-# data['train']['pneg_len'] = corpus.train_pneg_len
+
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
@@ -180,9 +167,12 @@ def train():
         sent, sent_len, ppos, pneg, field, value, target = get_data(corpus.train, batch_num, False)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
-        for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
-            #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
-            loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
+        for bsz in range(decoder_output.size(0)):
+            # print(decoder_output[bsz, sent_len[bsz], :].size(), target[bsz, sent_len[bsz]].size())
+            loss += criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]])
+        # for di in range(decoder_output.size(1)): # decoder_output = batch_size X seq_len X vocabsize
+        #     #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
+        #     loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
         total_loss += loss.data
         total_words += sum(sent_len)
         batch_loss += loss.data

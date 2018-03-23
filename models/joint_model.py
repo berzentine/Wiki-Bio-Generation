@@ -30,7 +30,7 @@ class Seq2SeqModel(nn.Module):
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
-        encoder_output, encoder_hidden = self.encoder.forward_test(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
+        encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
         encoder_output = torch.stack(encoder_output, dim=0)
         encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         if self.verbose: print(encoder_output.size(), encoder_hidden[0].size(), encoder_hidden[1].size())

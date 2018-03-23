@@ -10,8 +10,7 @@ POS_VOCAB_SIZE = len(corpus.pos_vocab)
 def generate(reference_sent, data_box):
     corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
     corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], 1, verbose)
-
-
+    
     total_loss = total_words = 0
     model.eval()
     start_time = time.time()

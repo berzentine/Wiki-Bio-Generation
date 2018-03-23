@@ -75,7 +75,7 @@ class Seq2SeqModel(nn.Module):
             #print gen_seq
             if dictionary.idx2word[int(max_idx)] == '<eos>':
                 #gen_seq.append('<eos>')
-                print 'breaked', '='*32
+                print('breaked', '='*32)
                 break
-        print gen_seq
+        print(gen_seq)
         return gen_seq

@@ -108,7 +108,6 @@ if verbose:
     print(len(corpus.valid_ppos_len), len(corpus.valid_pneg_len), len(corpus.valid_field_len), len(corpus.valid_value_len), len(corpus.valid_sent_len))
     print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
 
-    print(len(corpus.train["sent"]))
     print('='*32)
 
 #Build Model and move to CUDA
@@ -173,7 +172,7 @@ def train():
     total_loss = total_words = 0
     model.train()
     start_time = time.time()
-    random.shuffle(train_batches)
+    #random.shuffle(train_batches)
     for batch_num in train_batches:
         i+=1
         sent, sent_len, ppos, pneg, field, value, target = get_data(corpus.train, batch_num, False)

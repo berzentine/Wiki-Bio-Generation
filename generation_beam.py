@@ -42,6 +42,7 @@ parser.add_argument('--epochs', type=int, default=100,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
+parser.add_argument('--beam_size', type=int, required=True, help='Beam size for performing beam search')
 
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
@@ -74,6 +75,7 @@ log_interval = args.log_interval
 max_length = args.max_sent_length
 ref_path = args.ref_path
 gen_path = args.gen_path
+beam_size = args.beam_size
 
 
 print("Load embedding")

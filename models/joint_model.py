@@ -70,6 +70,7 @@ class Seq2SeqModel(nn.Module):
             max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
             #print 'max index', int(max_idx)
             curr_input = self.sent_lookup(max_idx).unsqueeze(0)
+            # TODO if max_idx is UNK then do what?
             #print 'new curr', curr_input.shape
             gen_seq.append(dictionary.idx2word[int(max_idx)])
             #print gen_seq

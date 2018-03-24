@@ -30,6 +30,7 @@ def batchify(data, batchsize, verbose):
         # padd sentences in batch
         batch_sent = datum[d:d+batchsize]
         max_sent = len(batch_sent[-1][0])
+        #print max_sent
         for b in batch_sent:
             temp_sentences_actual_length.append(len(b[0]))
             while(len(b[0])<max_sent):
@@ -37,6 +38,8 @@ def batchify(data, batchsize, verbose):
             temp_sentences_padded.append(torch.LongTensor(b[0]))
         sent_length.append(temp_sentences_actual_length)
         sent.append(torch.stack(temp_sentences_padded, dim=0))
+        #print torch.stack(temp_sentences_padded, dim=0).shape
+        #print max_sent, sent_length
         # padd remaining items in the batch
         # padd values in batch # padd fields in batch # padd positions in batch
         # can be done toegther since same length of these all

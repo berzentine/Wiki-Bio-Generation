@@ -135,7 +135,7 @@ test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 
 def test_evaluate(data_source, data_order, test):
     with open('docID.txt', 'w') as wp:
-        index=0
+        #index=0
         with open('reference.txt', 'w') as rp:
             with open('generated.txt', 'w') as gp:
                 total_loss = total_words = 0
@@ -151,20 +151,27 @@ def test_evaluate(data_source, data_order, test):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
                     gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
                                                            corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
-                    print ref_seq
-                    print gen_seq
-                    index+=1
+                    #print ref_seq
+                    #print gen_seq
+                    #index+=1
                     #print '='*32
                     for r in ref_seq:
                         rp.write(r+" ")
                     for g in gen_seq:
                         gp.write(g+" ")
-                    wp.write("DOCID: "+str(index))
+                    #wp.write("DOCID: "+str(index))
                     rp.write("\n\n")
                     gp.write("\n\n")
-                    wp.write("\n\n")
-
-
+                    #wp.write("\n\n")
+    import os
+    os.system("echo \"************ Non-tokenized scores ************\"")
+    os.system("./multi-bleu.pl reference.txt < generated.txt | grep \"BLEU\"")
+    os.system("echo \"======================================================\"")
+    os.system("echo \"************ Tokenized scores ************\"")
+    os.system("./tokenizer.pl -l en < reference.txt > tokenized_reference.txt")
+    os.system("./tokenizer.pl -l en < generated.txt > tokenized_generated.txt")
+    os.system("./multi-bleu.pl tokenized_reference.txt < tokenized_generated.txt | grep \"BLEU\"")
+    #
     return
 
 # Load the best saved model.

@@ -23,7 +23,7 @@ parser.add_argument('--verbose', action='store_true', default=False, help='use V
 parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
-parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
+parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
@@ -124,6 +124,7 @@ if args.cuda:
 #Build criterion and optimizer
 criterion = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
+#optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
@@ -247,9 +248,9 @@ try:
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
             best_val_loss = val_loss
-        else:
+        #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
-            lr /= 2
+        #    lr /= 2
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')

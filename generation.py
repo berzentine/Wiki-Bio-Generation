@@ -40,16 +40,16 @@ parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=100,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
-parser.add_argument('--ref_path', type=str, required=True, help='Path for the reference file')
-parser.add_argument('--gen_path', type=str, required=True, help='Path for the generated file')
+parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
+parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
 
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
 Outputs:
-reference.txt : Gold text for comparision
-generated.txt : System generated text
-reference.txt.tokenized : Tokenized version of reference.txt
-generated.txt.tokenized : Tokenized version of generated.txt
+reference.txt : Gold text for comparision will be stored here
+generated.txt : System generated text will be stored here
+reference.txt.tokenized : Tokenized version of reference.txt will be stored here
+generated.txt.tokenized : Tokenized version of generated.txt will be stored here
 """
 args = parser.parse_args()
 cuda = args.cuda

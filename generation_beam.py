@@ -163,8 +163,8 @@ def test_evaluate(data_source, data_order, test):
                     ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
                     #if WORD_VOCAB_SIZE>int(sent[0][i]):
                     #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
-                                                       corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
+                gen_seq = model.generate_beam(value, field, ppos, pneg, 1, False, max_length, \
+                                                       corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, beam_size, verbose)
                 #print ref_seq
                 #print gen_seq
                 #index+=1

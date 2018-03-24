@@ -165,12 +165,12 @@ def test_evaluate(data_source, data_order, test):
                     #wp.write("\n\n")
     import os
     os.system("echo \"************ Non-tokenized scores ************\"")
-    os.system("./Scoring_scripts/multi-bleu.pl reference.txt < generated.txt | grep \"BLEU\"")
+    os.system("./scoring_scripts/multi-bleu.pl reference.txt < generated.txt | grep \"BLEU\"")
     os.system("echo \"======================================================\"")
     os.system("echo \"************ Tokenized scores ************\"")
-    os.system("./Scoring_scripts/tokenizer.pl -l en < reference.txt > tokenized_reference.txt")
-    os.system("./Scoring_scripts/tokenizer.pl -l en < generated.txt > tokenized_generated.txt")
-    os.system("./Scoring_scripts/multi-bleu.pl tokenized_reference.txt < tokenized_generated.txt | grep \"BLEU\"")
+    os.system("./scoring_scripts/tokenizer.pl -l en < reference.txt > tokenized_reference.txt")
+    os.system("./scoring_scripts/tokenizer.pl -l en < generated.txt > tokenized_generated.txt")
+    os.system("./scoring_scripts/multi-bleu.pl tokenized_reference.txt < tokenized_generated.txt | grep \"BLEU\"")
     #
     return
 

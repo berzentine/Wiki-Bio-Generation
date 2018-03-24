@@ -41,7 +41,7 @@ class DualAttention(nn.Module):
             q = alpha_t*beta_t
             if self.verbose: print(q.size())
             # qn = torch.norm(q, p=1, dim=1).detach().unsqueeze(1)
-            qn = torch.sum(q, dim=1).detach().unqueeze(1)
+            qn = torch.sum(q, dim=1, keepdim=True).detach()
             if self.verbose: print(qn.size())
             gamma = q.div(qn.expand_as(q))
             if self.verbose: print(gamma.size())

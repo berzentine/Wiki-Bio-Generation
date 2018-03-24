@@ -4,3 +4,4 @@ saved_models/
 *.pyc
 .DS_Store
 *txt
+*txt.tokenized

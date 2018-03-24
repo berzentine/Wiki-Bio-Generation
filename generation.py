@@ -40,7 +40,17 @@ parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=100,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
+parser.add_argument('--ref_path', type=str, required=True, help='Path for the reference file')
+parser.add_argument('--gen_path', type=str, required=True, help='Path for the generated file')
 
+"""
+USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
+Outputs:
+reference.txt : Gold text for comparision
+generated.txt : System generated text
+reference.txt.tokenized : Tokenized version of reference.txt
+generated.txt.tokenized : Tokenized version of generated.txt
+"""
 args = parser.parse_args()
 cuda = args.cuda
 verbose = args.verbose
@@ -62,6 +72,8 @@ lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
 max_length = args.max_sent_length
+ref_path = args.ref_path
+gen_path = args.gen_path
 
 
 print("Load embedding")
@@ -134,43 +146,41 @@ def get_data(data_source, num, evaluation):
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 
 def test_evaluate(data_source, data_order, test):
-    with open('docID.txt', 'w') as wp:
-        #index=0
-        with open('reference.txt', 'w') as rp:
-            with open('generated.txt', 'w') as gp:
-                total_loss = total_words = 0
-                model.eval()
-                start_time = time.time()
-                random.shuffle(data_order)
-                for batch_num in data_order:
-                    sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
-                    ref_seq = []
-                    for i in range(0, len(actual_sent[0])):
-                        ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
-                        #if WORD_VOCAB_SIZE>int(sent[0][i]):
-                        #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                    gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
-                                                           corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
-                    #print ref_seq
-                    #print gen_seq
-                    #index+=1
-                    #print '='*32
-                    for r in ref_seq:
-                        rp.write(r+" ")
-                    for g in gen_seq:
-                        gp.write(g+" ")
-                    #wp.write("DOCID: "+str(index))
-                    rp.write("\n\n")
-                    gp.write("\n\n")
-                    #wp.write("\n\n")
+    with open(ref_path, 'w') as rp:
+        with open(gen_path, 'w') as gp:
+            total_loss = total_words = 0
+            model.eval()
+            start_time = time.time()
+            random.shuffle(data_order)
+            for batch_num in data_order:
+                sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
+                ref_seq = []
+                for i in range(0, len(actual_sent[0])):
+                    ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
+                    #if WORD_VOCAB_SIZE>int(sent[0][i]):
+                    #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
+                gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
+                                                       corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
+                #print ref_seq
+                #print gen_seq
+                #index+=1
+                #print '='*32
+                for r in ref_seq:
+                    rp.write(r+" ")
+                for g in gen_seq:
+                    gp.write(g+" ")
+                #wp.write("DOCID: "+str(index))
+                rp.write("\n\n")
+                gp.write("\n\n")
+                #wp.write("\n\n")
     import os
     os.system("echo \"************ Non-tokenized scores ************\"")
-    os.system("./scoring_scripts/multi-bleu.pl reference.txt < generated.txt | grep \"BLEU\"")
+    os.system("./scoring_scripts/multi-bleu.pl " +ref_path +" < " +gen_path +" | grep \"BLEU\"")
     os.system("echo \"======================================================\"")
     os.system("echo \"************ Tokenized scores ************\"")
-    os.system("./scoring_scripts/tokenizer.pl -l en < reference.txt > tokenized_reference.txt")
-    os.system("./scoring_scripts/tokenizer.pl -l en < generated.txt > tokenized_generated.txt")
-    os.system("./scoring_scripts/multi-bleu.pl tokenized_reference.txt < tokenized_generated.txt | grep \"BLEU\"")
+    os.system("./scoring_scripts/tokenizer.pl -l en < " +ref_path +" > "+ ref_path+".tokenized")
+    os.system("./scoring_scripts/tokenizer.pl -l en < " +gen_path +" > "+ gen_path+".tokenized")
+    os.system("./scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
     #
     return
 

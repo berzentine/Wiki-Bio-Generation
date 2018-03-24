@@ -95,13 +95,13 @@ POS_VOCAB_SIZE = len(corpus.pos_vocab)
 print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
-corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
+corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], 1, verbose)
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], 1, verbose)
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
-corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
+corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], 1, verbose)
 
 corpus.create_data_dictionaries()
 
@@ -144,7 +144,7 @@ def get_data(data_source, num, evaluation):
 
 
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
-
+train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 def test_evaluate(data_source, data_order, test):
     with open(ref_path, 'w') as rp:
         with open(gen_path, 'w') as gp:
@@ -175,12 +175,12 @@ def test_evaluate(data_source, data_order, test):
                 #wp.write("\n\n")
     import os
     os.system("echo \"************ Non-tokenized scores ************\"")
-    os.system("./scoring_scripts/multi-bleu.pl " +ref_path +" < " +gen_path +" | grep \"BLEU\"")
+    os.system("./Scoring_scripts/multi-bleu.pl " +ref_path +" < " +gen_path +" | grep \"BLEU\"")
     os.system("echo \"======================================================\"")
     os.system("echo \"************ Tokenized scores ************\"")
-    os.system("./scoring_scripts/tokenizer.pl -l en < " +ref_path +" > "+ ref_path+".tokenized")
-    os.system("./scoring_scripts/tokenizer.pl -l en < " +gen_path +" > "+ gen_path+".tokenized")
-    os.system("./scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +ref_path +" > "+ ref_path+".tokenized")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +gen_path +" > "+ gen_path+".tokenized")
+    os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
     #
     return
 
@@ -188,4 +188,4 @@ def test_evaluate(data_source, data_order, test):
 with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 # Run on test data.
-test_evaluate(corpus.test, test_batches, test=True)
+test_evaluate(corpus.train, train_batches, test=True)

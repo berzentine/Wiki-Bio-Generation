@@ -16,14 +16,14 @@ class Decoder(nn.Module):
     def forward(self, input, hidden, encoder_hidden, input_z):
         output, hidden = self.lstm(input, hidden)
         if self.verbose: print(output.size(), hidden[0].size(), hidden[1].size())
-        concat_v, attn_vectors = self.attn_layer.forward(output, encoder_hidden, input_z)
+        concat_v, attn_vectors = self.attn_layer.forward_test(output, encoder_hidden, input_z)
         #concat_v = torch.cat((output, attn_vectors), 2)
         concat_v = torch.stack(concat_v, dim=0)
         out = self.tanh(self.lin1(concat_v))
         out = self.lin2(out)
         out = out.view(out.size(1), out.size(0), out.size(2))
         if self.verbose: print(out.size())
-        return out, hidden
+        return out, hidden, attn_vectors
 
     def forward_plain(self, input, hidden, encoder_hidden, input_z):
         output, hidden = self.lstm(input, hidden)

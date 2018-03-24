@@ -136,6 +136,7 @@ def get_data(data_source, num, evaluation):
     actual_sent =  batch[:, 0:batch.size(1)]
     target = batch[:, 1:batch.size(1)]
     sent_len = data_source['sent_len'][num]
+    value_len = data_source['value_len'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:
@@ -151,7 +152,7 @@ def get_data(data_source, num, evaluation):
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, target, actual_sent
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent
 
 
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
@@ -166,7 +167,7 @@ def train():
     #random.shuffle(train_batches)
     for batch_num in train_batches:
         i+=1
-        sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(corpus.train, batch_num, False)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
@@ -204,9 +205,9 @@ def test_evaluate(data_source, data_order, test):
     start_time = time.time()
     random.shuffle(data_order)
     for batch_num in data_order:
-        sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
-        gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
-                                                corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(data_source, batch_num, True)
+        gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 1, False, max_length, \
+                                                corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, corpus.word_vocab.word2idx["UNK"])
 
 
     return 0 # TODO
@@ -217,7 +218,7 @@ def evaluate(data_source, data_order, test):
     start_time = time.time()
     random.shuffle(data_order)
     for batch_num in data_order:
-        sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(data_source, batch_num, True)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""

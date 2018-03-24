@@ -42,6 +42,7 @@ parser.add_argument('--epochs', type=int, default=100,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
+parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced generated file')
 
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
@@ -74,6 +75,7 @@ log_interval = args.log_interval
 max_length = args.max_sent_length
 ref_path = args.ref_path
 gen_path = args.gen_path
+unk_gen_path = args.unk_gen_path
 
 
 print("Load embedding")
@@ -119,6 +121,7 @@ def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
     field = data_source['field'][num]
     value = data_source['value'][num]
+    value_len = data_source['value_len'][num]
     ppos = data_source['ppos'][num]
     pneg = data_source['pneg'][num]
     sent = batch[:, 0:batch.size(1)-1]
@@ -140,48 +143,55 @@ def get_data(data_source, num, evaluation):
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, target, actual_sent
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent
 
 
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 def test_evaluate(data_source, data_order, test):
-    with open(ref_path, 'w') as rp:
-        with open(gen_path, 'w') as gp:
-            total_loss = total_words = 0
-            model.eval()
-            start_time = time.time()
-            random.shuffle(data_order)
-            for batch_num in data_order:
-                sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
-                ref_seq = []
-                for i in range(0, len(actual_sent[0])):
-                    ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
-                    #if WORD_VOCAB_SIZE>int(sent[0][i]):
-                    #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                gen_seq = model.generate(value, field, ppos, pneg, 1, False, max_length, \
-                                                       corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)
-                #print ref_seq
-                #print gen_seq
-                #index+=1
-                #print '='*32
-                for r in ref_seq:
-                    rp.write(r+" ")
-                for g in gen_seq:
-                    gp.write(g+" ")
-                #wp.write("DOCID: "+str(index))
-                rp.write("\n\n")
-                gp.write("\n\n")
-                #wp.write("\n\n")
+    with open(unk_gen_path, 'w') as up:
+        with open(ref_path, 'w') as rp:
+            with open(gen_path, 'w') as gp:
+                total_loss = total_words = 0
+                model.eval()
+                start_time = time.time()
+                random.shuffle(data_order)
+                for batch_num in data_order:
+                    sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(data_source, batch_num, True)
+                    ref_seq = []
+                    for i in range(0, len(actual_sent[0])):
+                        ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
+                        #if WORD_VOCAB_SIZE>int(sent[0][i]):
+                        #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
+                    gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 1, False, max_length, \
+                                                           corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, corpus.word_vocab.word2idx["UNK"])
+                    #print ref_seq
+                    #print gen_seq
+                    #index+=1
+                    #print '='*32
+                    for u in unk_rep_seq:
+                        up.write(u+" ")
+                    for r in ref_seq:
+                        rp.write(r+" ")
+                    for g in gen_seq:
+                        gp.write(g+" ")
+                    #wp.write("DOCID: "+str(index))
+                    up.write("\n\n")
+                    rp.write("\n\n")
+                    gp.write("\n\n")
+                    #wp.write("\n\n")
     import os
     os.system("echo \"************ Non-tokenized scores ************\"")
     os.system("./Scoring_scripts/multi-bleu.pl " +ref_path +" < " +gen_path +" | grep \"BLEU\"")
+    os.system("./Scoring_scripts/multi-bleu.pl " +ref_path +" < " +unk_gen_path +" | grep \"BLEU\"")
     os.system("echo \"======================================================\"")
     os.system("echo \"************ Tokenized scores ************\"")
     os.system("./Scoring_scripts/tokenizer.pl -l en < " +ref_path +" > "+ ref_path+".tokenized")
     os.system("./Scoring_scripts/tokenizer.pl -l en < " +gen_path +" > "+ gen_path+".tokenized")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +unk_gen_path +" > "+ unk_gen_path+".tokenized")
     os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
-    #
+    os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+unk_gen_path+".tokenized | grep \"BLEU\"")
+#
     return
 
 # Load the best saved model.

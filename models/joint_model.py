@@ -39,12 +39,12 @@ class Seq2SeqModel(nn.Module):
         #print encoder_hidden.shape
         # TODO: Fix from here: [encoder_hidden is concatenation of hidden and cell state]
         # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
-        decoder_output, decoder_hidden = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output, decoder_hidden, attn_vector = self.decoder.forward(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden
 
     # TODO: should it be given as a batch? In which case how to handle the break condition in this method?
 
-    def generate(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary):
+    def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
@@ -54,7 +54,8 @@ class Seq2SeqModel(nn.Module):
         encoder_output = torch.stack(encoder_output, dim=0)
         encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         gen_seq = []
-        gen_seq.append('<sos>')
+        unk_rep_seq = []
+        #gen_seq.append('<sos>')
         #print start_symbol
         # hsould be a 1 X 1 long tensor
         start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
@@ -65,17 +66,25 @@ class Seq2SeqModel(nn.Module):
         prev_hidden = encoder_hidden
         #print 'start', curr_input.shape  ## start (1L, 1L, 400L)
         for i in range(max_length):
-            decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+            decoder_output, prev_hidden, attn_vector = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
             #print 'decoder out', decoder_output.squeeze().shape ## decoder out (20003L,)
+            #attn_vector = torch.stack(attn_vector, dim=0)
             max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
             #print 'max index', int(max_idx)
             curr_input = self.sent_lookup(max_idx).unsqueeze(0)
             #print 'new curr', curr_input.shape
+            if int(max_idx) == unk_symbol:
+                max_val, max_idx = torch.max(attn_vector[0][:,:value_len[0]], 1)
+                sub = value[0][max_idx]
+                word = dictionary.idx2word[int(sub)]
+            else:
+                word = dictionary.idx2word[int(max_idx)]
             gen_seq.append(dictionary.idx2word[int(max_idx)])
+            unk_rep_seq.append(word)
             #print gen_seq
             if dictionary.idx2word[int(max_idx)] == '<eos>':
                 #gen_seq.append('<eos>')
                 #print('breaked', '='*32)
                 break
         #print(gen_seq)
-        return gen_seq
+        return gen_seq, unk_rep_seq

@@ -3,3 +3,5 @@ data/Wiki-Data/wikipedia-biography-dataset-dummy/
 saved_models/
 *.pyc
 .DS_Store
+*txt
+*txt.tokenized

@@ -69,8 +69,9 @@ class DualAttention(nn.Module):
         for i in range(out2.size(1)):
             if self.verbose: print(out2[:, i, :].unsqueeze(1).size())
             g1 = torch.mul(out_hs, out2[:, i, :].unsqueeze(1))
+            g1 = torch.sum(g1, dim=2)
             if self.verbose: print(g1.size())
-            alpha_t = F.softmax(g1, 0)
+            alpha_t = F.softmax(g1, 1)
             if self.verbose: print(alpha_t.size())
             # if self.verbose: print(out3[:, i, :].unsqueeze(1).size())
             # g2 = torch.mul(out_fds, out3[:, i, :].unsqueeze(1))
@@ -83,7 +84,8 @@ class DualAttention(nn.Module):
             # if self.verbose: print(qn.size())
             # gamma = q.div(qn.expand_as(q))
             # if self.verbose: print(gamma.size())
-            attn_vector = torch.sum(alpha_t*encoder_hidden, dim=1)
+            a_t = torch.bmm(alpha_t.unsqueeze(1), encoder_hidden)
+            attn_vector = torch.sum(a_t, dim=1)
             if self.verbose: print(attn_vector.size())
             concat_v = torch.cat((output[:, i, :], attn_vector), 1)
             attn.append(attn_vector)
@@ -119,6 +121,7 @@ class DualAttention(nn.Module):
             beta_t = F.softmax(g2, 1)
             if self.verbose: print(beta_t.size())
             q = alpha_t*beta_t
+            print(q)
             if self.verbose: print(q.size())
             # qn = torch.norm(q, p=1, dim=1).detach().unsqueeze(1)
             qn = torch.sum(q, dim=1, keepdim=True).detach()
@@ -134,4 +137,6 @@ class DualAttention(nn.Module):
             concat_v = torch.cat((output[:, i, :], contex), 1)
             attn.append(gamma)
             concat_vectors.append(concat_v)
+            #print(output[:, i, :])
+            #print(concat_v)
         return concat_vectors, attn

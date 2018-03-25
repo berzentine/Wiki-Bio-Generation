@@ -164,21 +164,30 @@ def train():
     total_loss = total_words = 0
     model.train()
     start_time = time.time()
+    num_batches = 0
     #random.shuffle(train_batches)
     for batch_num in train_batches:
         i+=1
+        num_batches+=1
+        #batch_num = 21
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
+        words = 0
         for bsz in range(decoder_output.size(0)):
             # print(decoder_output[bsz, sent_len[bsz], :].size(), target[bsz, sent_len[bsz]].size())
             loss += criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]])
-        # for di in range(decoder_output.size(1)): # decoder_output = batch_size X seq_len X vocabsize
+            #print(decoder_output[bsz, 0:sent_len[bsz], :])
+            #print(batch_num)
+            #print(target[bsz, 0:sent_len[bsz]])
+            #print(criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]]), loss.data)
+        #for di in range(decoder_output.size(1)): # decoder_output = batch_size X seq_len X vocabsize
         #     #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
-        #     loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
+        #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
         total_loss += loss.data
         total_words += sum(sent_len)
+        #print(total_loss, total_words)
         batch_loss += loss.data
         batch_words += sum(sent_len)
         optimizer.zero_grad()
@@ -188,14 +197,18 @@ def train():
         #print batch_loss[0]
         if i % log_interval == 0 and i > 0:
             cur_loss = batch_loss[0] / batch_words
+            print(cur_loss)
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                   'loss {:5.6f} | ppl {:8.6f}'.format(
                 epoch, i, len(train_batches), lr, elapsed * 1000 / log_interval, cur_loss, math.exp(cur_loss)))
             batch_loss = 0
             batch_words = 0
+            num_batches=0
             start_time = time.time()
+        #exit(0)
         del sent, sent_len, ppos, pneg, field, value, target, decoder_output, decoder_hidden
+    #print(total_loss[0], total_words)
     train_losses.append(total_loss[0]/total_words)
 
 

@@ -44,6 +44,91 @@ class Seq2SeqModel(nn.Module):
 
     # TODO: should it be given as a batch? In which case how to handle the break condition in this method?
 
+
+    def update_vectors(self):
+        pass
+
+    def generate_beam(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, beam, verbose):
+        input_d = self.value_lookup(value)
+        input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
+        encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
+        if self.cuda_var:
+            encoder_initial_hidden = encoder_initial_hidden.cuda()
+        encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
+        encoder_output = torch.stack(encoder_output, dim=0)
+        encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
+        gen_seq = []
+        gen_seq.append('<sos>')
+        start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
+        if self.cuda_var:
+            start_symbol = start_symbol.cuda()
+        curr_input = self.sent_lookup(start_symbol) # TODO: change here to look and handle batches
+        prev_hidden = encoder_hidden
+
+
+
+
+        outputs, scores , hiddens, inputs, candidates = [], [], [], [], [[] for k in range(beam)]
+        for j in range(beam):
+            candidates[j].append(dictionary.idx2word[int(start_symbol)])
+
+        decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
+        values, indices = torch.topk(decoder_output, beam, 2)
+        for j in range(beam): # for step time = 0
+            outputs.append(indices[0,0,j].squeeze().data[0]) # what was the otput during this state
+            scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
+            hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
+            inputs.append(curr_input) # what was the input during this state
+            candidates[j].append(int(outputs[j])) # update candidate vectors too with a + " "
+            #candidates[j].append(dictionary.idx2word[int(outputs[j])])
+        #print indices, 'start after sos'
+
+
+        for i in range(max_length-1):
+            # store k X K ones here for each jth exploration in outputs
+            temp_scores, temp_hiddens , temp_inputs, temp_outputs = [], [], [], []
+            for j in range(beam):
+                # explore outputs[j]
+                #print 'For index', outputs[j],
+                curr_input = self.sent_lookup(Variable(torch.LongTensor(1,1).fill_(outputs[j])))
+                # prev_hidden is an issue here
+                decoder_output, prev_hidden, attn_vector = self.decoder.forward(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+                decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
+                #print decoder_output
+                values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
+                #print values, indices, 'is the top k'
+
+                for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
+                    temp_outputs.append(indices[0,0,p].squeeze().data[0])
+                    temp_scores.append(values[0,0,j].squeeze().data[0])
+                    temp_hiddens.append(prev_hidden)
+                    temp_inputs.append(outputs[j]) # issue is here
+            #exit(0)
+            #print '='*32
+            # if explore all options
+            # take top k and update actual vectors again
+            if verbose:
+                print ('This', len(temp_scores), 'should be beam*beam size')
+            zipped = zip(temp_outputs, temp_scores, temp_hiddens, temp_inputs)
+            zipped.sort(key = lambda t: t[1], reverse=True)
+            #print len(zipped), type(zipped[0]) # 25 <type 'tuple'>
+            outputs, scores , hiddens, inputs = [], [], [], []
+            for j in range(beam):
+                outputs.append(zipped[j][0])
+                scores.append(zipped[j][1])
+                hiddens.append(zipped[j][2])
+                inputs.append(zipped[j][3])
+                candidates[j].append(int(outputs[j]))
+                #candidates[j].append(dictionary.idx2word[int(outputs[j])])
+            #for j in range(beam): # update candidate vectors too with a + " "
+
+
+        print(candidates)
+
+        return  candidates
+
+
     def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
@@ -72,6 +157,7 @@ class Seq2SeqModel(nn.Module):
             max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
             #print 'max index', int(max_idx)
             curr_input = self.sent_lookup(max_idx).unsqueeze(0)
+            # TODO if max_idx is UNK then do what?
             #print 'new curr', curr_input.shape
             if int(max_idx) == unk_symbol:
                 max_val, max_idx = torch.max(attn_vector[0][:,:value_len[0]], 1)

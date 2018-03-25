@@ -168,8 +168,8 @@ class Seq2SeqModel(nn.Module):
             # TODO if max_idx is UNK then do what?
             #print 'new curr', curr_input.shape
             if int(max_idx) == unk_symbol:
-                max_val, max_idx = torch.max(attn_vector[0][:,:value_len[0]], 1)
-                sub = value[0][max_idx]
+                unk_max_val, unk_max_idx = torch.max(attn_vector[0][:,:value_len[0]], 1)
+                sub = value[0][unk_max_idx]
                 word = dictionary.idx2word[int(sub)]
             else:
                 word = dictionary.idx2word[int(max_idx)]

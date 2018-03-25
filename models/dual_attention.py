@@ -121,7 +121,7 @@ class DualAttention(nn.Module):
             beta_t = F.softmax(g2, 1)
             if self.verbose: print(beta_t.size())
             q = alpha_t*beta_t
-            print(q)
+            #print(q)
             if self.verbose: print(q.size())
             # qn = torch.norm(q, p=1, dim=1).detach().unsqueeze(1)
             qn = torch.sum(q, dim=1, keepdim=True).detach()

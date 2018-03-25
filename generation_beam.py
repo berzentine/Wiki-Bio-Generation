@@ -163,23 +163,28 @@ def test_evaluate(data_source, data_order, test):
                     ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
                     #if WORD_VOCAB_SIZE>int(sent[0][i]):
                     #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                gen_seq = model.generate_beam(value, field, ppos, pneg, 1, False, max_length, \
+                candidates, candidate_scores = model.generate_beam(value, field, ppos, pneg, 1, False, max_length, \
                                                        corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, beam_size, verbose)
                 #print ref_seq
                 #print gen_seq
                 #index+=1
                 #print '='*32
+                gen_seq = []
+                score  = [0 for k in range(beam_size)]
+                for k in range(beam_size):
+                    for i in range(len(candidate_scores[k])):
+                        score[k]+=candidate_scores[k][i]
+                zipped = zip(score, candidates)
+                zipped.sort(key = lambda t: t[0], reverse=True)
+                gen_seq = zipped[0][1]
                 for r in ref_seq:
                     rp.write(r+" ")
                 for g in gen_seq:
                     gp.write(g+" ")
-                #wp.write("DOCID: "+str(index))
                 rp.write("\n\n")
                 gp.write("\n\n")
-                #wp.write("\n\n")
                 gold_set.append(ref_seq)
                 pred_set.append(gen_seq)
-    #print len(gold_set), len(pred_set)
     import os
     os.system("echo \"************ Python scores ************\"")
     bleu = corpus_bleu(gold_set, pred_set)

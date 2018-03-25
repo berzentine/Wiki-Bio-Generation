@@ -69,10 +69,13 @@ class Seq2SeqModel(nn.Module):
 
 
         outputs, scores , hiddens, inputs, candidates = [], [], [], [], [[] for k in range(beam)]
+        candidate_scores = [[] for k in range(beam)]
         for j in range(beam):
             candidates[j].append(dictionary.idx2word[int(start_symbol)])
+            candidate_scores[j].append(0)
 
-        decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output, prev_hidden = self.decoder.forward_plain(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        #decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
         values, indices = torch.topk(decoder_output, beam, 2)
         for j in range(beam): # for step time = 0
@@ -80,8 +83,9 @@ class Seq2SeqModel(nn.Module):
             scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
             hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
             inputs.append(curr_input) # what was the input during this state
-            candidates[j].append(int(outputs[j])) # update candidate vectors too with a + " "
-            #candidates[j].append(dictionary.idx2word[int(outputs[j])])
+            #candidates[j].append(int(outputs[j])) # update candidate vectors too with a + " "
+            candidates[j].append(dictionary.idx2word[int(outputs[j])])
+            candidate_scores[j].append(scores[j])
         #print indices, 'start after sos'
 
 
@@ -93,7 +97,8 @@ class Seq2SeqModel(nn.Module):
                 #print 'For index', outputs[j],
                 curr_input = self.sent_lookup(Variable(torch.LongTensor(1,1).fill_(outputs[j])))
                 # prev_hidden is an issue here
-                decoder_output, prev_hidden, attn_vector = self.decoder.forward(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+                decoder_output, prev_hidden = self.decoder.forward_plain(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+                #decoder_output, prev_hidden, attn_vector = self.decoder.forward(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
                 decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
                 #print decoder_output
                 values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
@@ -119,14 +124,17 @@ class Seq2SeqModel(nn.Module):
                 scores.append(zipped[j][1])
                 hiddens.append(zipped[j][2])
                 inputs.append(zipped[j][3])
-                candidates[j].append(int(outputs[j]))
-                #candidates[j].append(dictionary.idx2word[int(outputs[j])])
+                #candidates[j].append(int(outputs[j]))
+                candidates[j].append(dictionary.idx2word[int(outputs[j])])
+                candidate_scores[j].append(scores[j])
+
             #for j in range(beam): # update candidate vectors too with a + " "
 
+        if verbose:
+            print(candidates)
+            print(candidate_scores)
 
-        print(candidates)
-
-        return  candidates
+        return candidates, candidate_scores
 
 
     def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol):

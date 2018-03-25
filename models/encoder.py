@@ -36,7 +36,7 @@ class Encoder(nn.Module):
                                    #autograd.Variable(weight.new(2*self.num_layers, batch_size, self.hidden_dim//2).zero_()))
 
     # Always batch first is needed
-    def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
+    def forward_test(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
         def recurrence(d_t, z_t, h_t_1, c_t_1):
             gates_vanilla = self.input_weights(d_t) + self.hidden_weights(h_t_1)
             ingate, forgetgate, cellgate, outgate = gates_vanilla.chunk(4, 1)
@@ -44,7 +44,7 @@ class Encoder(nn.Module):
             lgate, zhatgate = gates_field.chunk(2, 1)
 
             ingate = F.sigmoid(ingate)
-            forgetgate = F.sigmoid(forgetgate)
+            forgetgate = F.sigmoid(forgetgate+1)
             cellgate = F.tanh(cellgate)
             outgate = F.sigmoid(outgate)
             lgate = F.sigmoid(lgate)
@@ -64,7 +64,7 @@ class Encoder(nn.Module):
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
         return output, (hidden,cell_state)
 
-    def forward_test(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
+    def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
         def recurrence(d_t, z_t, h_t_1, c_t_1):
             inp = torch.cat((d_t, h_t_1), dim=1)
             gates_vanilla = self.lin1(inp)
@@ -73,7 +73,7 @@ class Encoder(nn.Module):
             lgate, zhatgate = gates_field.chunk(2, 1)
 
             ingate = F.sigmoid(ingate)
-            forgetgate = F.sigmoid(forgetgate)
+            forgetgate = F.sigmoid(forgetgate+1)
             cellgate = F.tanh(cellgate)
             outgate = F.sigmoid(outgate)
             lgate = F.sigmoid(lgate)

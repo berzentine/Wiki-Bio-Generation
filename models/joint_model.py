@@ -148,7 +148,7 @@ class Seq2SeqModel(nn.Module):
         encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         gen_seq = []
         unk_rep_seq = []
-        #gen_seq.append('<sos>')
+        gen_seq.append('<sos>')
         #print start_symbol
         # hsould be a 1 X 1 long tensor
         start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))

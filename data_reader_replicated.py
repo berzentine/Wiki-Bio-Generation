@@ -211,10 +211,13 @@ class Corpus(object):
                 if re.search("[1-9]\d*$", pos):
                     field_id = int(pos)
                     if field_id<=30:
+                        self.pos_vocab.add_word(field_id)
                         temp_ppos.append(self.pos_vocab.word2idx[field_id])
                     else:
+                        self.pos_vocab.add_word(30)
                         temp_ppos.append(self.pos_vocab.word2idx[30])
                 else:
+                    self.pos_vocab.add_word(1)
                     temp_ppos.append(self.pos_vocab.word2idx[1])
 
             temp_pneg = self.reverse_pos(temp_ppos)

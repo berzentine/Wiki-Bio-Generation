@@ -5,7 +5,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import data_reader as data_reader
+import data_reader as data_reader_replicated
 import random
 from batchify_pad import batchify
 from models.joint_model import Seq2SeqModel

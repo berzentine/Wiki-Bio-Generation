@@ -1,5 +1,6 @@
 import os
 import torch
+import re
 
 
 
@@ -140,9 +141,6 @@ class Corpus(object):
                 current.append(temp_ppos[i]) # append in buffer
 
         temp_pneg+= current[::-1]
-        #print temp_ppos
-        #print temp_pneg
-        #print '======'
         return temp_pneg
 
 
@@ -190,51 +188,35 @@ class Corpus(object):
             j = 0
             field_prev = ""
             for l in line:  # address each part in the table for f, p+, p-, and value
-                word = l.split(':')[0]
-                field_value = l.split(':')[1]
+                word = l.split(':')[0] # prefix
+                field_value = l.split(':')[1] # word
                 if '<none>' in field_value or field_value.strip()=='' or word.strip()=='':
                     continue
 
                 word = l.split(':')[0].rsplit('_',1)[0] # field_name
                 pos = l.split(':')[0].rsplit('_',1)[1]
+
                 if word in self.field_vocab.word2idx:
                     temp_field.append(self.field_vocab.word2idx[word])
                 else:
                     temp_field.append(self.field_vocab.word2idx['UNK'])
 
-                word = l.split(':')[1]
-                if word in self.word_vocab.word2idx:
-                    temp_value.append(self.word_vocab.word2idx[word])
+
+                if field_value in self.word_vocab.word2idx:
+                    temp_value.append(self.word_vocab.word2idx[field_value])
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
-                if int(pos)<30:
-                    self.pos_vocab.add_word(pos)
-                    temp_ppos.append(self.pos_vocab.word2idx[pos])
-                else:
-                    self.pos_vocab.add_word(30)
-                    temp_ppos.append(self.pos_vocab.word2idx[30])
-                """
-                if re.search("_[1-9]\d*$", prefix):
-                    field_id = int(prefix.split('_')[-1])
-                    box_single_pos.append(field_id if field_id<=30 else 30)
-                else:
-                    box_single_pos.append(1)
-                """
 
-                """if j>30:
-                    self.pos_vocab.add_word(30)
-                    temp_ppos.append(self.pos_vocab.word2idx[30])
-                else:
-                    self.pos_vocab.add_word(j)
-                    temp_ppos.append(self.pos_vocab.word2idx[j])
 
-                if (len(line) - j - 1)>30:
-                    self.pos_vocab.add_word(30)
-                    temp_pneg.append(self.pos_vocab.word2idx[30])
+                if re.search("[1-9]\d*$", pos):
+                    field_id = int(pos)
+                    if field_id<=30:
+                        temp_ppos.append(self.pos_vocab.word2idx[field_id])
+                    else:
+                        temp_ppos.append(self.pos_vocab.word2idx[30])
                 else:
-                    self.pos_vocab.add_word(len(line) - j - 1)
-                    temp_pneg.append(self.pos_vocab.word2idx[len(line) - j - 1])
-                j += 1"""
+                    temp_ppos.append(self.pos_vocab.word2idx[1])
+
             temp_pneg = self.reverse_pos(temp_ppos)
             # TODO: call here to reverse it and redo the job for pneg
             value.append(temp_value)

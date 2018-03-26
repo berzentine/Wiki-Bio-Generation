@@ -7,7 +7,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import data_reader as data_reader
+import data_reader_replicated as data_reader
 import random
 from batchify_pad import batchify
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction

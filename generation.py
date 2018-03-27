@@ -188,7 +188,7 @@ def test_evaluate(data_source, data_order, test):
                         ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                    gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 1, False, max_length, \
+                    gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 32, False, max_length, \
                                                            corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
                                                            corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk)
 

@@ -55,4 +55,5 @@ class Decoder(nn.Module):
         out = out.view(out.size(1), out.size(0), out.size(2))
         out = out.contiguous()
         if self.verbose: print(out.size())
+        hidden = (hidden[0].unsqueeze(0),hidden[1].unsqueeze(0))
         return out, hidden, attn_vectors

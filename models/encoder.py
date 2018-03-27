@@ -66,7 +66,9 @@ class Encoder(nn.Module):
 
     def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
         def recurrence(d_t, z_t, h_t_1, c_t_1):
+            print(d_t.shape, h_t_1.shape)
             inp = torch.cat((d_t, h_t_1), dim=1)
+
             gates_vanilla = self.lin1(inp)
             ingate, forgetgate, cellgate, outgate = gates_vanilla.chunk(4, 1)
             gates_field = self.z_weights(z_t)

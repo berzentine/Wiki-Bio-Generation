@@ -25,7 +25,7 @@ parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
+parser.add_argument('--batchsize', type=int, default=1,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
@@ -91,7 +91,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_reader.Corpus(data_path, vocab_path, 1, limit, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, batchsize, limit, verbose)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)
@@ -108,7 +108,7 @@ corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_l
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
 corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value = \
 batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
-1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
+batchsize, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len,\
@@ -188,7 +188,7 @@ def test_evaluate(data_source, data_order, test):
                         ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                    gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 32, False, max_length, \
+                    gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, batch_size, False, max_length, \
                                                            corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
                                                            corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk)
 

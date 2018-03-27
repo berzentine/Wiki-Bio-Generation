@@ -169,6 +169,7 @@ class Seq2SeqModel(nn.Module):
             #print 'new curr', curr_input.shape
             if int(max_idx) == unk_symbol:
                 unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0],0], 0)
+                print(type(unk_max_val), type(unk_max_idx))
                 sub = value_ununk[0][unk_max_idx] # should be value_ununk
                 word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
                 print("Unk got replaced with", word)

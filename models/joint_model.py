@@ -137,7 +137,7 @@ class Seq2SeqModel(nn.Module):
         return candidates, candidate_scores
 
 
-    def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol):
+    def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, ununk_dictionary, value_ununk):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
@@ -169,8 +169,9 @@ class Seq2SeqModel(nn.Module):
             #print 'new curr', curr_input.shape
             if int(max_idx) == unk_symbol:
                 unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0],0], 0)
-                sub = value[0][unk_max_idx]
-                word = dictionary.idx2word[int(sub)]
+                sub = value_ununk[0][unk_max_idx] # should be value_ununk
+                word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
+                print("Unk got replaced with", word)
             else:
                 word = dictionary.idx2word[int(max_idx)]
             gen_seq.append(dictionary.idx2word[int(max_idx)])

@@ -89,22 +89,34 @@ POS_VOCAB_SIZE = len(corpus.pos_vocab)
 print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
-corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len = batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], batchsize, verbose)
+corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
+corpus.train_ununk_field, corpus.train_ununk_value = \
+batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
+batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
-corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len = batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], 1, verbose)
+corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value = \
+batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
+1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
-corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len = batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], batchsize, verbose)
+corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len,\
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value = \
+batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
+batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
 
 corpus.create_data_dictionaries()
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
-    print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
-    print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent))
-    print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent))
-    print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent))
+    print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent...and values', '-- Should be equal across rows --')
+    print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent),  \
+    len(corpus.train_ununk_sent), len(corpus.train_ununk_value), len(corpus.train_ununk_field))
+    print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent), \
+    len(corpus.valid_ununk_sent), len(corpus.valid_ununk_value), len(corpus.valid_ununk_field))
+    print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent), \
+    len(corpus.test_ununk_sent), len(corpus.test_ununk_value), len(corpus.test_ununk_field))
 
     print('='*3, '# PLen +', '='*3, '# PLen -', '='*3, '# FLen', '='*3, '# V(F)Len', '='*3, '# SentLen', '-- Should be equal across rows --')
     print(len(corpus.train_ppos_len), len(corpus.train_pneg_len), len(corpus.train_field_len), len(corpus.train_value_len), len(corpus.train_sent_len))
@@ -112,27 +124,35 @@ if verbose:
     print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
 
     print('='*32)
-
 #Build Model and move to CUDA
 model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=WORD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                      pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                      field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                      pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
                      decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda)
+
+weight_mask = torch.ones(WORD_VOCAB_SIZE)
 if args.cuda:
     model.cuda()
+    weight_mask = torch.ones(WORD_VOCAB_SIZE).cuda()
+
 
 #Build criterion and optimizer
-weight_mask = torch.ones(WORD_VOCAB_SIZE).cuda()
+
 weight_mask[0] = 0
 criterion = nn.CrossEntropyLoss(ignore_index=0, weight=weight_mask, size_average=True)
-#criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False) 
+#criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
     field = data_source['field'][num]
+
+    field_ununk = data_source['field_ununk'][num]
+    value_ununk = data_source['value_ununk'][num]
+    sent_ununk = data_source['sent_ununk'][num]
+
     value = data_source['value'][num]
     ppos = data_source['ppos'][num]
     pneg = data_source['pneg'][num]
@@ -155,8 +175,13 @@ def get_data(data_source, num, evaluation):
     value = Variable(value, volatile=evaluation)
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
+
+    field_ununk = Variable(field_ununk, volatile=evaluation)
+    value_ununk = Variable(value_ununk, volatile=evaluation)
+    sent_ununk = Variable(sent_ununk, volatile=evaluation)
+
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk
 
 
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
@@ -176,7 +201,8 @@ def train():
         i+=1
         num_batches+=1
         #batch_num = 21
-        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(corpus.train, batch_num, False)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk \
+         = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
@@ -235,7 +261,7 @@ def train():
 
 
 def test_evaluate(data_source, data_order, test):
-    total_loss = total_words = 0
+    """total_loss = total_words = 0
     model.eval()
     start_time = time.time()
     random.shuffle(data_order)
@@ -244,7 +270,7 @@ def test_evaluate(data_source, data_order, test):
         gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 1, False, max_length, \
                                                 corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, corpus.word_vocab.word2idx["UNK"])
 
-
+    """
     return 0 # TODO
 
 def evaluate(data_source, data_order, test):
@@ -254,7 +280,8 @@ def evaluate(data_source, data_order, test):
     random.shuffle(data_order)
     losses = []
     for batch_num in data_order:
-        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(data_source, batch_num, True)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk \
+        = get_data(data_source, batch_num, True)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
@@ -309,6 +336,6 @@ with open(model_save_path+"best_model.pth", 'rb') as f:
 # Run on test data.
 test_loss = test_evaluate(corpus.test, test_batches, test=True)
 print('=' * 89)
-print('| End of training | test loss {:5.6f} | test ppl {:8.6f}'.format(
+print('| End of training | test loss DONT TRUST {:5.6f} | test ppl {:8.6f}'.format(
     test_loss, math.exp(test_loss)))
 print('=' * 89)

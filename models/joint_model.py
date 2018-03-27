@@ -168,7 +168,7 @@ class Seq2SeqModel(nn.Module):
             # TODO if max_idx is UNK then do what?
             #print 'new curr', curr_input.shape
             if int(max_idx) == unk_symbol:
-                if self.value_ununk:
+                if value_ununk:
                     value_ununk = value_ununk.cuda()
                 unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0],0], 0)
                 print(type(unk_max_val), type(unk_max_idx))

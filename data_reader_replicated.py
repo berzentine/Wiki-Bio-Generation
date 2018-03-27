@@ -252,12 +252,13 @@ class Corpus(object):
 
 
                 if field_value in self.word_vocab.word2idx:
+
                     temp_value.append(self.word_vocab.word2idx[field_value])
                 else:
                     temp_value.append(self.word_vocab.word2idx['UNK'])
 
-                self.word_ununk_vocab.add_word(word)
-                temp_value_ununk.append(self.word_ununk_vocab.word2idx[word])
+                self.word_ununk_vocab.add_word(field_value)
+                temp_value_ununk.append(self.word_ununk_vocab.word2idx[field_value])
 
 
                 if re.search("[1-9]\d*$", pos):
@@ -276,8 +277,10 @@ class Corpus(object):
             # TODO: call here to reverse it and redo the job for pneg
             value.append(temp_value)
             value_ununk.append(temp_value_ununk)
+
             field.append(temp_field)
             field_ununk.append(temp_field_ununk)
+
             ppos.append(temp_ppos)
             pneg.append(temp_pneg)
         return value, field, ppos, pneg, sent, sent_ununk, field_ununk, value_ununk

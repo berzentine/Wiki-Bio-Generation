@@ -46,7 +46,7 @@ class DualAttention(nn.Module):
         return concat_vectors, attn
 
 
-    def forward_test2(self, output, encoder_hidden, input_z):
+    def forward_dual(self, output, encoder_hidden, input_z):
         out_hs = self.tanh(self.lin1(encoder_hidden))
         out_hs = out_hs.view(out_hs.size(1), out_hs.size(0), out_hs.size(2))
         if self.verbose: print(out_hs.size())

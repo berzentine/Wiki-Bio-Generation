@@ -15,10 +15,10 @@ class Decoder(nn.Module):
         self.lin2 = nn.Linear(hidden_size, vocab_size)
         self.verbose = verbose
 
-    def forward(self, input, hidden, encoder_hidden, input_z):
+    def forward_unbiased_lstm(self, input, hidden, encoder_hidden, input_z):
         output, hidden = self.lstm(input, hidden)
         if self.verbose: print(output.size(), hidden[0].size(), hidden[1].size())
-        concat_v, attn_vectors = self.attn_layer.forward_vanilla(output, encoder_hidden, input_z)
+        concat_v, attn_vectors = self.attn_layer.forward_dual(output, encoder_hidden, input_z)
         #concat_v = torch.cat((output, attn_vectors), 2)
         concat_v = torch.stack(concat_v, dim=0)
         out = self.tanh(self.lin1(concat_v))
@@ -41,13 +41,13 @@ class Decoder(nn.Module):
         return out, hidden
 
 
-    def forward_test(self, input, hidden, encoder_hidden, input_z):
+    def forward_biased_lstm(self, input, hidden, encoder_hidden, input_z):
         hidden = (hidden[0].squeeze(0), hidden[1].squeeze(0))
         output, hidden = self.lstm_unit.forward(input, hidden)
         output = torch.stack(output, dim=1)
         # output, hidden = self.lstm(input, hidden)
         if self.verbose: print(output.size(), hidden[0].size(), hidden[1].size())
-        concat_v, attn_vectors = self.attn_layer.forward_test2(output, encoder_hidden, input_z)
+        concat_v, attn_vectors = self.attn_layer.forward_dual(output, encoder_hidden, input_z)
         #concat_v = torch.cat((output, attn_vectors), 2)
         concat_v = torch.stack(concat_v, dim=0)
         out = self.tanh(self.lin1(concat_v))

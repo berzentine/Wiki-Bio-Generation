@@ -39,7 +39,7 @@ class Seq2SeqModel(nn.Module):
         #print encoder_hidden.shape
         # TODO: Fix from here: [encoder_hidden is concatenation of hidden and cell state]
         # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
-        decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_test(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
         return decoder_output, decoder_hidden
 
     # TODO: should it be given as a batch? In which case how to handle the break condition in this method?
@@ -159,7 +159,7 @@ class Seq2SeqModel(nn.Module):
         prev_hidden = encoder_hidden
         #print 'start', curr_input.shape  ## start (1L, 1L, 400L)
         for i in range(max_length):
-            decoder_output, prev_hidden, attn_vector = self.decoder.forward_test(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+            decoder_output, prev_hidden, attn_vector = self.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
             #print 'decoder out', decoder_output.squeeze().shape ## decoder out (20003L,)
             #attn_vector = torch.stack(attn_vector, dim=0)
             max_val, max_idx = torch.max(decoder_output.squeeze(), 0)

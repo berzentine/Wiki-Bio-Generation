@@ -4,6 +4,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
+import numpy as np
 import torch.optim as optim
 import data_reader_replicated as data_reader
 import random
@@ -122,7 +123,10 @@ if args.cuda:
     model.cuda()
 
 #Build criterion and optimizer
-criterion = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
+weight_mask = torch.ones(WORD_VOCAB_SIZE).cuda()
+weight_mask[0] = 0
+criterion = nn.CrossEntropyLoss(ignore_index=0, weight=weight_mask, size_average=True)
+#criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False) 
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 
@@ -166,6 +170,8 @@ def train():
     start_time = time.time()
     num_batches = 0
     #random.shuffle(train_batches)
+    losses = []
+    batch_losses = []
     for batch_num in train_batches:
         i+=1
         num_batches+=1
@@ -175,9 +181,9 @@ def train():
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
         loss = 0
         words = 0
-        for bsz in range(decoder_output.size(0)):
+        #for bsz in range(decoder_output.size(0)):
             # print(decoder_output[bsz, sent_len[bsz], :].size(), target[bsz, sent_len[bsz]].size())
-            loss += criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]])
+        #    loss1 += criterion1(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]])
             #print(decoder_output[bsz, 0:sent_len[bsz], :])
             #print(batch_num)
             #print(target[bsz, 0:sent_len[bsz]])
@@ -185,6 +191,18 @@ def train():
         #for di in range(decoder_output.size(1)): # decoder_output = batch_size X seq_len X vocabsize
         #     #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
+        #print(decoder_output.size())
+        #print(decoder_output.view(-1, WORD_VOCAB_SIZE).size())
+        #print(target.size())
+        #print(target.view(-1).size())
+        #print(loss.data)
+        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.view(-1))
+        #print(sent_len)
+        #print(loss.data)
+        #exit(0)
+        losses.append(loss.data[0])
+        batch_losses.append(loss.data[0])
+        #print(losses)
         total_loss += loss.data
         total_words += sum(sent_len)
         #print(total_loss, total_words)
@@ -196,8 +214,11 @@ def train():
         optimizer.step()
         #print batch_loss[0]
         if i % log_interval == 0 and i > 0:
-            cur_loss = batch_loss[0] / batch_words
-            print(cur_loss)
+            #cur_loss = batch_loss[0] / batch_words
+            #print(cur_loss)
+            #print(batch_losses)
+            cur_loss = np.mean(batch_losses)
+            #print(cur_loss)
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                   'loss {:5.6f} | ppl {:8.6f}'.format(
@@ -205,11 +226,12 @@ def train():
             batch_loss = 0
             batch_words = 0
             num_batches=0
+            batch_losses = []
             start_time = time.time()
         #exit(0)
         del sent, sent_len, ppos, pneg, field, value, target, decoder_output, decoder_hidden
     #print(total_loss[0], total_words)
-    train_losses.append(total_loss[0]/total_words)
+    train_losses.append(np.mean(losses))
 
 
 def test_evaluate(data_source, data_order, test):
@@ -230,6 +252,7 @@ def evaluate(data_source, data_order, test):
     model.eval()
     start_time = time.time()
     random.shuffle(data_order)
+    losses = []
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent = get_data(data_source, batch_num, True)
         decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
@@ -237,14 +260,17 @@ def evaluate(data_source, data_order, test):
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 
         loss = 0
-        for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
+        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.view(-1))
+        #for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
-            loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])
+        #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])
+        losses.append(loss.data[0])
         total_loss += loss.data
         total_words += sum(sent_len)
-    return total_loss[0]/total_words
+    return np.mean(losses)
 
 best_val_loss = None
+best_train_loss = None
 val_losses = []
 train_losses = []
 try:
@@ -253,17 +279,20 @@ try:
         train()
         val_loss = evaluate(corpus.valid, val_batches, test=False)
         val_losses.append(val_loss)
+        tloss = train_losses[-1]
         print('-' * 89)
-        print('| end of epoch {:3d} | time: {:5.6f}s | valid loss {:5.6f} | '
-              'valid ppl {:8.6f}'.format(epoch, (time.time() - epoch_start_time),
+        print('| end of epoch {:3d} | time: {:5.6f}s | train_loss {:5.6f} | train ppl {:8.6f} | valid loss {:5.6f} | '
+              'valid ppl {:8.6f}'.format(epoch, (time.time() - epoch_start_time), tloss, math.exp(tloss),
                                          val_loss, math.exp(val_loss)))
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
-        if not best_val_loss or val_loss < best_val_loss:
+        #if not best_val_loss or val_loss < best_val_loss:
+        if not best_train_loss or tloss < best_train_loss:
             print("Saving best model")
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
-            best_val_loss = val_loss
+            best_train_loss = tloss
+            #best_val_loss = val_loss
         #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
         #    lr /= 2

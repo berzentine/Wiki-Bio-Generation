@@ -30,7 +30,7 @@ class LSTMUnit(nn.Module):
         c_t = (forgetgate * c_t_1) + (ingate * cellgate)
         h_t = outgate * F.tanh(c_t)
 
-        return h_t, c_t
+        return h_t, (h_t, c_t)
 
 
     def forward(self, input, hidden): # input vector, h_0 intialized as 0's and same for cell state
@@ -38,7 +38,7 @@ class LSTMUnit(nn.Module):
         steps = range(input.size(1))  # input_d = batch X seq_length X dim
         hidden, cell_state = hidden
         for i in steps:
-            hidden, cell_state = self.recurrence(input[:,i,:], hidden, cell_state)
-            output.append(hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
+            last_hidden, (hidden, cell_state) = self.recurrence(input[:,i,:], hidden, cell_state)
+            output.append(last_hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
         return output, (hidden,cell_state)

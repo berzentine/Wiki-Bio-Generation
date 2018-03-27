@@ -222,7 +222,8 @@ def train():
         #print(target.size())
         #print(target.view(-1).size())
         #print(loss.data)
-        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.view(-1))
+        # decoder_output = decoder_output.view(-1, WORD_VOCAB_SIZE).contiguous()
+        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
         #print(sent_len)
         #print(loss.data)
         #exit(0)
@@ -287,7 +288,7 @@ def evaluate(data_source, data_order, test):
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 
         loss = 0
-        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.view(-1))
+        loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
         #for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
             #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])

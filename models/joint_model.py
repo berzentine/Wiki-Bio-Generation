@@ -137,7 +137,7 @@ class Seq2SeqModel(nn.Module):
         return candidates, candidate_scores
 
 
-    def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, ununk_dictionary, value_ununk):
+    """def generate(self, value, value_len, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, ununk_dictionary, value_ununk):
         input_d = self.value_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
@@ -187,4 +187,4 @@ class Seq2SeqModel(nn.Module):
                 #print('breaked', '='*32)
                 break
         #print(gen_seq)
-        return gen_seq, unk_rep_seq
+        return gen_seq, unk_rep_seq"""

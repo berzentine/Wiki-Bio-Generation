@@ -185,7 +185,7 @@ def test_evaluate(data_source, data_order, test):
                     sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk = get_data(data_source, batch_num, True)
                     ref_seq = []
                     for i in range(0, len(actual_sent[0])):
-                        ref_seq.append(corpus.word_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
+                        ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
                     gen_seq, unk_rep_seq = model.generate(value, value_len, field, ppos, pneg, 1, False, max_length, \

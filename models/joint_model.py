@@ -20,6 +20,17 @@ class Seq2SeqModel(nn.Module):
         self.decoder = Decoder(sent_embed_size, decoder_hidden_size, encoder_hidden_size, decoder_num_layer, sent_vocab_size, self.field_rep_embed_size, verbose)
         self.verbose = verbose
         self.cuda_var = cuda_var
+        self.init_weights()
+
+    def init_weights(self):
+        torch.nn.init.xavier_uniform(self.sent_lookup.weight)
+        torch.nn.init.xavier_uniform(self.field_lookup.weight)
+        torch.nn.init.xavier_uniform(self.ppos_lookup.weight)
+        torch.nn.init.xavier_uniform(self.pneg_lookup.weight)
+
+        
+
+
 
     def forward(self, sent, value, field, ppos, pneg, batch_size):
 

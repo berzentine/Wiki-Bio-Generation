@@ -40,7 +40,7 @@ class DualAttention(nn.Module):
             a_t = alpha_t*encoder_hidden
             attn_vector = torch.sum(a_t, dim=1)
             if self.verbose: print(attn_vector.size())
-            concat_v = torch.cat((output[:, i, :], attn_vector), 1)
+            concat_v = torch.cat((attn_vector, output[:, i, :]), 1)
             attn.append(alpha_t)
             concat_vectors.append(concat_v)
         return concat_vectors, attn
@@ -91,7 +91,7 @@ class DualAttention(nn.Module):
             contex = torch.sum(a_t, dim=1)
             # print(contex.size(), output[:, i, :].size())
             if self.verbose: print(contex.size())
-            concat_v = torch.cat((output[:, i, :], contex), 1)
+            concat_v = torch.cat((contex, output[:, i, :]), 1)
             attn.append(gamma)
             concat_vectors.append(concat_v)
             #print(output[:, i, :])

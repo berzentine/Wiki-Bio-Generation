@@ -194,9 +194,9 @@ ununk_dictionary, value_ununk):
         decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
-        # TODO: Issue here
-        print curr_input.shape()
-        exit(0)
+        # TODO: Is
+        #print curr_input.shape()
+        #exit(0)
         if int(max_idx) == unk_symbol:
             if cuda:
                 value_ununk = value_ununk.cuda()

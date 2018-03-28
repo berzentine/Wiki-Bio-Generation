@@ -190,7 +190,7 @@ ununk_dictionary, value_ununk):
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
     prev_hidden = encoder_hidden
     for i in range(max_length):
-        decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+        decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
         if int(max_idx) == unk_symbol:

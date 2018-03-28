@@ -22,7 +22,8 @@ class Seq2SeqModel(nn.Module):
         self.cuda_var = cuda_var
 
     def forward(self, sent, value, field, ppos, pneg, batch_size):
-        input_d = self.value_lookup(value)
+
+        input_d = self.sent_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         #print sent
         sent = self.sent_lookup(sent)

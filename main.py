@@ -37,8 +37,8 @@ parser.add_argument('--nhid', type=int, default=500,help='number of hidden units
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
-parser.add_argument('--epochs', type=int, default=100,help='epochs')
-parser.add_argument('--max_sent_length', type=int, default=40,help='maximum sentence length for decoding')
+parser.add_argument('--epochs', type=int, default=50,help='epochs')
+parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
 
 args = parser.parse_args()
 cuda = args.cuda
@@ -125,7 +125,7 @@ if verbose:
 
     print('='*32)
 #Build Model and move to CUDA
-model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=WORD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
+model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                      pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                      field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                      pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,

@@ -272,6 +272,9 @@ class Corpus(object):
                 else:
                     self.pos_vocab.add_word(1)
                     temp_ppos.append(self.pos_vocab.word2idx[1])
+                j+=1
+                if j==100:
+                    break
 
             temp_pneg = self.reverse_pos(temp_ppos)
             # TODO: call here to reverse it and redo the job for pneg

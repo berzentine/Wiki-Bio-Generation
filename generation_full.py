@@ -174,7 +174,7 @@ train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 def generate(value, value_len, field, ppos, pneg, batch_size, \
 train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
 ununk_dictionary, value_ununk):
-    input_d = model.value_lookup(value)
+    input_d = model.sent_lookup(value)
     input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
     encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
     if cuda:
@@ -188,11 +188,15 @@ ununk_dictionary, value_ununk):
     if cuda:
         start_symbol = start_symbol.cuda()
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
+    print curr_input.shape()
     prev_hidden = encoder_hidden
     for i in range(max_length):
         decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
+        # TODO: Issue here
+        print curr_input.shape()
+        exit(0)
         if int(max_idx) == unk_symbol:
             if cuda:
                 value_ununk = value_ununk.cuda()

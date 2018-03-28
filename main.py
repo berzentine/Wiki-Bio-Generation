@@ -35,7 +35,7 @@ parser.add_argument('--pos_emsize', type=int, default=5,help='size of position e
 parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
 parser.add_argument('--nhid', type=int, default=500,help='number of hidden units per layer')
 parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
-parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
+parser.add_argument('--clip', type=float, default=5,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')

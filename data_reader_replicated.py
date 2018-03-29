@@ -165,7 +165,7 @@ class Corpus(object):
 
         for word in words:
             #print word.split('\t')
-            word, freq = word.split('\t')
+            word, freq = word.split()
             self.word_vocab.add_word(word)
         for field in fields:
             #print field.split('\t')

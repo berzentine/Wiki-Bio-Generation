@@ -201,6 +201,8 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         # TODO: Issue here
         # print curr_input.shape()
         # exit(0)
+        if dictionary.idx2word[int(max_idx)] == '<eos>':
+            break
         if int(max_idx) == unk_symbol:
             if cuda:
                 value_ununk = value_ununk.cuda()

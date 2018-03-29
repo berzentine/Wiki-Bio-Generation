@@ -90,19 +90,19 @@ print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
-corpus.train_ununk_field, corpus.train_ununk_value = \
+corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask = \
 batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
 batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
-corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value = \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask = \
 batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
 1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len,\
-corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value = \
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask = \
 batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
 batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
 
@@ -161,6 +161,8 @@ def get_data(data_source, num, evaluation):
     target = batch[:, 1:batch.size(1)]
     sent_len = data_source['sent_len'][num]
     value_len = data_source['value_len'][num]
+    sent_mask = data_source['sent_mask'][num]
+    value_mask = data_source['value_mask'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:
@@ -170,18 +172,20 @@ def get_data(data_source, num, evaluation):
         value = value.cuda()
         ppos = ppos.cuda()
         pneg = pneg.cuda()
+        value_mask = value_mask.cuda()
     sent = Variable(sent, volatile=evaluation)
     field = Variable(field, volatile=evaluation)
     value = Variable(value, volatile=evaluation)
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
+    value_mask = Variable(value_mask, volatile=evaluation)
 
     field_ununk = Variable(field_ununk, volatile=evaluation)
     value_ununk = Variable(value_ununk, volatile=evaluation)
     sent_ununk = Variable(sent_ununk, volatile=evaluation)
 
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk, sent_mask, value_mask
 
 
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
@@ -201,10 +205,10 @@ def train():
         i+=1
         num_batches+=1
         #batch_num = 21
-        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk \
-         = get_data(corpus.train, batch_num, False)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+        field_ununk , value_ununk, sent_mask, value_mask  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
+        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, value_mask)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):
@@ -281,9 +285,9 @@ def evaluate(data_source, data_order, test):
     random.shuffle(data_order)
     losses = []
     for batch_num in data_order:
-        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk \
-        = get_data(data_source, batch_num, True)
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize)
+        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \
+        value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
+        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, value_mask)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 

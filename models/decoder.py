@@ -61,3 +61,23 @@ class Decoder(nn.Module):
         if self.verbose: print(out.size())
         hidden = (hidden[0].unsqueeze(0),hidden[1].unsqueeze(0))
         return out, hidden, attn_vectors
+
+
+    # def forward_biased_lstm_iterative(self, input, hidden, encoder_hidden, input_z):
+    #     hidden = (hidden[0].squeeze(0), hidden[1].squeeze(0))
+    #
+    #     for i in range(input.size(1)):
+    #         output, hidden = self.lstm_unit.recurrence(input[:,i,:], hidden)
+    #         output = torch.stack(output, dim=1)
+    #         # output, hidden = self.lstm(input, hidden)
+    #         if self.verbose: print(output.size(), hidden[0].size(), hidden[1].size())
+    #         concat_v, attn_vectors = self.attn_layer.forward_dual(output, encoder_hidden, input_z)
+    #         #concat_v = torch.cat((output, attn_vectors), 2)
+    #         concat_v = torch.stack(concat_v, dim=0)
+    #         out = self.tanh(self.lin1(concat_v))
+    #         out = self.lin2(out)
+    #         out = out.view(out.size(1), out.size(0), out.size(2))
+    #         out = out.contiguous()
+    #         if self.verbose: print(out.size())
+    #     hidden = (hidden[0].unsqueeze(0),hidden[1].unsqueeze(0))
+    #     return out, hidden, attn_vectors

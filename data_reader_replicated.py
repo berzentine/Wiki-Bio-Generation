@@ -54,6 +54,8 @@ class Corpus(object):
         self.train_ununk_sent = []
         self.train_ununk_field = []
         self.train_ununk_value = []
+        self.train_sent_mask = []
+        self.train_value_mask = []
 
         self.test_ppos = []
         self.test_ppos_len = []
@@ -68,6 +70,8 @@ class Corpus(object):
         self.test_ununk_sent = []
         self.test_ununk_field = []
         self.test_ununk_value = []
+        self.test_sent_mask = []
+        self.test_value_mask = []
 
         self.valid_ppos = []
         self.valid_ppos_len = []
@@ -82,6 +86,8 @@ class Corpus(object):
         self.valid_ununk_sent = []
         self.valid_ununk_field = []
         self.valid_ununk_value = []
+        self.valid_sent_mask = []
+        self.valid_value_mask = []
 
         self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab, \
         "word_ununk_vocab": self.word_ununk_vocab, "field_ununk_vocab": self.field_ununk_vocab}
@@ -114,22 +120,25 @@ class Corpus(object):
                       "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,
                       "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,
                       "sent": self.train_sent, "sent_len": self.train_sent_len,
-                       "sent_ununk": self.train_ununk_sent, "field_ununk": self.train_ununk_field, "value_ununk": self.train_ununk_value}
+                       "sent_ununk": self.train_ununk_sent, "field_ununk": self.train_ununk_field,
+                      "value_ununk": self.train_ununk_value, "sent_mask": self.train_sent_mask,
+                      "value_mask": self.train_value_mask}
         self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
                       "field": self.valid_field, 'field_len': self.valid_field_len,
                       "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
                       "pneg": self.valid_pneg,"pneg_len": self.valid_pneg_len,
                       "sent": self.valid_sent, "sent_len": self.valid_sent_len,
-                      "sent_ununk": self.valid_ununk_sent, "field_ununk": self.valid_ununk_field, "value_ununk": self.valid_ununk_value}
+                      "sent_ununk": self.valid_ununk_sent, "field_ununk": self.valid_ununk_field,
+                      "value_ununk": self.valid_ununk_value, "sent_mask": self.valid_sent_mask,
+                      "value_mask": self.valid_value_mask}
         self.test = {"value": self.test_value, "value_len": self.test_value_len,
                      "field": self.test_field, 'field_len': self.test_field_len,
                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
                      "pneg": self.test_pneg, "pneg_len": self.test_pneg_len,
                      "sent": self.test_sent, "sent_len": self.test_sent_len,
-                     "sent_ununk": self.test_ununk_sent, "field_ununk": self.test_ununk_field, "value_ununk": self.test_ununk_value}
-
-
-
+                     "sent_ununk": self.test_ununk_sent, "field_ununk": self.test_ununk_field,
+                     "value_ununk": self.test_ununk_value, "sent_mask": self.test_sent_mask,
+                     "value_mask": self.test_value_mask}
 
 
     def populate_vocab(self, vocab_path, verbose):

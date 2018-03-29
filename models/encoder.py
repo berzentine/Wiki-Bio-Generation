@@ -64,8 +64,8 @@ class Encoder(nn.Module):
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
         return output, (hidden,cell_state)
 
-    def forward(self, input_d, input_z, hidden): # input vector, h_0 intialized as 0's and same for cell state
-        def recurrence(d_t, z_t, h_t_1, c_t_1):
+    def forward(self, input_d, input_z, hidden, mask): # input vector, h_0 intialized as 0's and same for cell state
+        def recurrence(d_t, z_t, h_t_1, c_t_1, mask):
             inp = torch.cat((d_t, h_t_1), dim=1)
 
             gates_vanilla = self.lin1(inp)
@@ -81,15 +81,17 @@ class Encoder(nn.Module):
             zhatgate = F.tanh(zhatgate)
 
             c_t = (forgetgate * c_t_1) + (ingate * cellgate) + (lgate * zhatgate)
-            h_t = outgate * F.tanh(c_t)
-
+            h_t = outgate * F.tanh(c_t) #batch * hidden
+            # h_t = h_t * mask.unsqueeze(1)
+            # c_t = c_t * mask.unsqueeze(1)
             return h_t, c_t
 
         output = []
         steps = range(input_d.size(1))  # input_d = batch X seq_length X dim
         hidden, cell_state = hidden.chunk(2, 1)
         for i in steps:
-            hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state)
-            output.append(hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
+            hidden, cell_state = recurrence(input_d[:,i,:], input_z[:,i,:], hidden, cell_state, mask[:,i])
+            out_hidden = hidden * mask[:,i].unsqueeze(1)
+            output.append(out_hidden)  # output[t][1] = hidden = batch x hidden ;; same for cell_state
         #output = torch.cat(output, 0).view(input.size(0), *output[0].size())
         return output, (hidden,cell_state)

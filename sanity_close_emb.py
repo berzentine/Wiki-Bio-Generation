@@ -100,19 +100,19 @@ print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
-corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask  = \
+corpus.train_ununk_field, corpus.train_ununk_value = \
 batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
 batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
-corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask  = \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value = \
 batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
 batchsize, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len,\
-corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask = \
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value = \
 batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
 batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
 
@@ -145,8 +145,6 @@ def get_data(data_source, num, evaluation):
     target = batch[:, 1:batch.size(1)]
     sent_len = data_source['sent_len'][num]
     value_len = data_source['value_len'][num]
-    sent_mask = data_source['sent_mask'][num]
-    value_mask = data_source['value_mask'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:
@@ -156,68 +154,22 @@ def get_data(data_source, num, evaluation):
         value = value.cuda()
         ppos = ppos.cuda()
         pneg = pneg.cuda()
-        value_mask = value_mask.cuda()
     sent = Variable(sent, volatile=evaluation)
     field = Variable(field, volatile=evaluation)
     value = Variable(value, volatile=evaluation)
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
-    value_mask = Variable(value_mask, volatile=evaluation)
 
     field_ununk = Variable(field_ununk, volatile=evaluation)
     value_ununk = Variable(value_ununk, volatile=evaluation)
     sent_ununk = Variable(sent_ununk, volatile=evaluation)
 
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk, sent_mask, value_mask
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk
 
 
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
-
-def generate(value, value_len, field, ppos, pneg, batch_size, \
-            train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
-            ununk_dictionary, value_ununk, value_mask):
-    input_d = model.sent_lookup(value)
-    input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
-    encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
-    if cuda:
-        encoder_initial_hidden = encoder_initial_hidden.cuda()
-    encoder_output, encoder_hidden = model.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden, mask=value_mask)
-    encoder_output = torch.stack(encoder_output, dim=0)
-    encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
-    gen_seq = []
-    unk_rep_seq = []
-    start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
-    if cuda:
-        start_symbol = start_symbol.cuda()
-    curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
-    # print curr_input.shape()
-    prev_hidden = encoder_hidden
-    for i in range(max_length):
-        decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z)
-        max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
-        curr_input = model.sent_lookup(max_idx).unsqueeze(0)
-        # TODO: Issue here
-        # print curr_input.shape()
-        # exit(0)
-        if int(max_idx) == unk_symbol:
-            if cuda:
-                value_ununk = value_ununk.cuda()
-            unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0],0], 0)
-            sub = value_ununk[0][unk_max_idx] # should be value_ununk
-            word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
-            print("Unk got replaced with", word)
-        else:
-            word = dictionary.idx2word[int(max_idx)]
-        gen_seq.append(dictionary.idx2word[int(max_idx)])
-        unk_rep_seq.append(word)
-        if dictionary.idx2word[int(max_idx)] == '<eos>':
-            break
-    return gen_seq, unk_rep_seq
-
-
-
 def test_evaluate(data_source, data_order, test):
     gold_set = []
     pred_set = []
@@ -230,16 +182,22 @@ def test_evaluate(data_source, data_order, test):
                 start_time = time.time()
                 random.shuffle(data_order)
                 for batch_num in data_order:
-                    sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk ,\
-                    value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
+                    sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk = get_data(data_source, batch_num, True)
                     ref_seq = []
-                    for i in range(1, len(actual_sent[0])):
+                    for i in range(0, len(actual_sent[0])):
                         ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                    gen_seq, unk_rep_seq = generate(value, value_len, field, ppos, pneg, batchsize, False, max_length, \
+                    start_symbol =  Variable(torch.LongTensor(1,1).fill_(corpus.word_vocab.word2idx['boxer']))
+                    n_symbol =  Variable(torch.LongTensor(1,1).fill_(corpus.word_vocab.word2idx['champion']))
+                    if cuda:
+                        start_symbol = start_symbol.cuda()
+                        n_symbol = n_symbol.cuda()
+                    print(torch.dot(model.sent_lookup(start_symbol),model.sent_lookup(start_symbol)))
+                    exit(0)
+                    gen_seq, unk_rep_seq = model.generate(sent, sent_len, value, value_len, field, ppos, pneg, batchsize, False, max_length, \
                                                            corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
-                                                           corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, value_mask)
+                                                           corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk)
 
                     for u in unk_rep_seq:
                         up.write(u+" ")
@@ -271,6 +229,7 @@ def test_evaluate(data_source, data_order, test):
     os.system("./Scoring_scripts/tokenizer.pl -l en < " +unk_gen_path +" > "+ unk_gen_path+".tokenized")
     os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
     os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+unk_gen_path+".tokenized | grep \"BLEU\"")
+#
     return
 
 # Load the best saved model.

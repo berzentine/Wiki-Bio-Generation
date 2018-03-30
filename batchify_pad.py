@@ -16,6 +16,8 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
     ppos_length = []
     pneg = []
     pneg_length = []
+    sent_mask = []
+    value_mask = []
 
     datum = sorted(zip(data[4], data[0], data[1], data[2], data[3], data_ununk[0], data_ununk[1], data_ununk[2]), key=lambda tup: len(tup[1]), reverse=True)
 
@@ -29,6 +31,9 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         temp_sentences_ununk_padded = []
         temp_table_field_ununk_padded = []
         temp_table_value_ununk_padded = []
+
+        temp_sentences_mask = []
+        temp_table_value_mask = []
 
         temp_table_field_actual_length = []
         temp_table_field_padded = []
@@ -51,15 +56,20 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         #print max_sent
         for b in batch_sent:
             temp_sentences_actual_length.append(len(b[0]))
+            mask = [1]*len(b[0])
             while(len(b[0])<max_sent):
                 b[0].append(0)
+                mask.append(0)
                 b[5].append(0)
             temp_sentences_padded.append(torch.LongTensor(b[0]))
             temp_sentences_ununk_padded.append(torch.LongTensor(b[5]))
+            temp_sentences_mask.append(torch.FloatTensor(mask))
 
         sent_length.append(temp_sentences_actual_length)
         sent.append(torch.stack(temp_sentences_padded, dim=0))
         sent_ununk.append(torch.stack(temp_sentences_ununk_padded, dim=0))
+        sent_mask.append(torch.stack(temp_sentences_mask, dim=0))
+
         #print torch.stack(temp_sentences_padded, dim=0).shape
         #print max_sent, sent_length
         # padd remaining items in the batch
@@ -74,6 +84,7 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
             temp_table_field_actual_length.append(len(b[2]))
             temp_table_ppos_actual_length.append(len(b[3]))
             temp_table_pneg_actual_length.append(len(b[4]))
+            mask = [1]*len(b[1])
             while(len(b[1])<table_max_length): # done based on value
                 b[1].append(0) # value
                 b[2].append(0) # field
@@ -81,12 +92,14 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
                 b[4].append(0) # ppneg
                 b[6].append(0)   #ununk field
                 b[7].append(0)  # ununk value
+                mask.append(0)
             temp_table_pneg_padded.append(torch.LongTensor(b[4]))
             temp_table_ppos_padded.append(torch.LongTensor(b[3]))
             temp_table_field_padded.append(torch.LongTensor(b[2]))
             temp_table_value_padded.append(torch.LongTensor(b[1]))
             temp_table_field_ununk_padded.append(torch.LongTensor(b[6]))
             temp_table_value_ununk_padded.append(torch.LongTensor(b[7]))
+            temp_table_value_mask.append(torch.FloatTensor(mask))
             #print temp_table_field_ununk_padded
             #print temp_table_field_padded
             #exit(0)
@@ -95,6 +108,7 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         ppos.append(torch.stack(temp_table_ppos_padded, dim=0))
         field.append(torch.stack(temp_table_field_padded, dim=0))
         value.append(torch.stack(temp_table_value_padded, dim=0))
+        value_mask.append(torch.stack(temp_table_value_mask, dim=0))
 
         field_ununk.append(torch.stack(temp_table_field_ununk_padded, dim=0))
         value_ununk.append(torch.stack(temp_table_value_ununk_padded, dim=0))
@@ -104,4 +118,4 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         field_length.append(temp_table_field_actual_length)
         value_length.append(temp_table_value_actual_length)
     return value, value_length, field, field_length, ppos, ppos_length, pneg, pneg_length, sent, sent_length, sent_ununk, field_ununk, \
-    value_ununk
+    value_ununk, sent_mask, value_mask

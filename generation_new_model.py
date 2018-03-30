@@ -174,6 +174,7 @@ def get_data(data_source, num, evaluation):
 
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
+val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
 
 def generate(value, value_len, field, ppos, pneg, batch_size, \
              train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
@@ -186,17 +187,21 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
     # encoder_output, encoder_hidden = model.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden, mask=value_mask)
     # encoder_output = torch.stack(encoder_output, dim=0)
     # encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
+    input_d = model.sent_lookup(value)
+    input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
+    input = torch.cat((input_d,input_z), 2)
+    encoder_output, encoder_hidden = model.encoder(input, None)
     gen_seq = []
     unk_rep_seq = []
-    start_symbol =  Variable(torch.LongTensor(1,1).fill_(sent[0][1]))
+    start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
     if cuda:
         start_symbol = start_symbol.cuda()
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
     # print curr_input.shape()
-    prev_hidden = None
+    prev_hidden = encoder_hidden
     for i in range(max_length):
         # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output, decoder_hidden = model.decoder(curr_input, prev_hidden)
+        decoder_output, prev_hidden = model.decoder.forward(curr_input, prev_hidden)
         decoder_output = model.linear_out(decoder_output)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
@@ -281,4 +286,4 @@ def test_evaluate(data_source, data_order, test):
 with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 # Run on test data.
-test_evaluate(corpus.train, train_batches, test=True)
+test_evaluate(corpus.valid, val_batches, test=True)

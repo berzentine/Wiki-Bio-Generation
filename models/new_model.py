@@ -16,7 +16,7 @@ class Seq2SeqModelNew(nn.Module):
         self.pneg_lookup = nn.Embedding(pneg_vocab_size, pneg_embed_size)
         self.field_rep_embed_size = field_embed_size+ppos_embed_size+pneg_embed_size
         self.decoder = nn.LSTM(input_size=sent_embed_size, hidden_size=encoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
-        self.encoder = nn.LSTM(input_size=sent_embed_size, hidden_size=decoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
+        self.encoder = nn.LSTM(input_size=sent_embed_size+self.field_rep_embed_size, hidden_size=decoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
         self.verbose = verbose
         self.cuda_var = cuda_var
@@ -33,6 +33,7 @@ class Seq2SeqModelNew(nn.Module):
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         input = torch.cat((input_d,input_z), 2)
         encoder_output, encoder_hidden = self.encoder(input, None)
+        #encoder_hidden = None
         sent = self.sent_lookup(sent)
         decoder_output, decoder_hidden = self.decoder(sent, encoder_hidden)
         decoder_output = self.linear_out(decoder_output)

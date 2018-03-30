@@ -285,7 +285,7 @@ def evaluate(data_source, data_order, test):
     total_loss = total_words = 0
     model.eval()
     start_time = time.time()
-    random.shuffle(data_order)
+    #random.shuffle(data_order)
     losses = []
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \

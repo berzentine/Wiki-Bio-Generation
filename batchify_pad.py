@@ -24,7 +24,6 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
     total_batches = len(datum)//batchsize
     datum = datum[0:total_batches*batchsize]
     for d in range(0,len(datum), batchsize):
-        # TODO: ISsue is here
         temp_sentences_actual_length = []
         temp_sentences_padded = []
 

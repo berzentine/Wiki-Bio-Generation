@@ -9,9 +9,8 @@ import torch.optim as optim
 import data_reader_replicated as data_reader
 import random
 from batchify_pad import batchify
-from models.joint_model import Seq2SeqModel
+from models.new_model import Seq2SeqModelNew
 from utils.plot_utils import plot
-from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
 
 ###############################################################################
@@ -65,9 +64,9 @@ max_length = args.max_sent_length
 
 ###############################################################################
 # Code Setup
-    # TODO: Load and make embeddings vector
-    # Check and Set Cuda
-    # Load Data and Tokenize it
+# TODO: Load and make embeddings vector
+# Check and Set Cuda
+# Load Data and Tokenize it
 ###############################################################################
 
 print("Load embedding")
@@ -91,32 +90,32 @@ print('='*32)
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
 corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask = \
-batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
-batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
+    batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
+             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
 corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask = \
-batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
-1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
+    batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
+             1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
-corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len,\
+corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len, \
 corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask = \
-batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
-batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
+    batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
+             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
 
 corpus.create_data_dictionaries()
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
     print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent...and values', '-- Should be equal across rows --')
-    print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent),  \
-    len(corpus.train_ununk_sent), len(corpus.train_ununk_value), len(corpus.train_ununk_field))
+    print(len(corpus.train_ppos), len(corpus.train_pneg), len(corpus.train_field), len(corpus.train_value), len(corpus.train_sent), \
+          len(corpus.train_ununk_sent), len(corpus.train_ununk_value), len(corpus.train_ununk_field))
     print(len(corpus.valid_ppos), len(corpus.valid_pneg), len(corpus.valid_field), len(corpus.valid_value), len(corpus.valid_sent), \
-    len(corpus.valid_ununk_sent), len(corpus.valid_ununk_value), len(corpus.valid_ununk_field))
+          len(corpus.valid_ununk_sent), len(corpus.valid_ununk_value), len(corpus.valid_ununk_field))
     print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent), \
-    len(corpus.test_ununk_sent), len(corpus.test_ununk_value), len(corpus.test_ununk_field))
+          len(corpus.test_ununk_sent), len(corpus.test_ununk_value), len(corpus.test_ununk_field))
 
     print('='*3, '# PLen +', '='*3, '# PLen -', '='*3, '# FLen', '='*3, '# V(F)Len', '='*3, '# SentLen', '-- Should be equal across rows --')
     print(len(corpus.train_ppos_len), len(corpus.train_pneg_len), len(corpus.train_field_len), len(corpus.train_value_len), len(corpus.train_sent_len))
@@ -125,7 +124,7 @@ if verbose:
 
     print('='*32)
 #Build Model and move to CUDA
-model = Seq2SeqModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
+model = Seq2SeqModelNew(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                      pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                      field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                      pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
@@ -212,12 +211,12 @@ def train():
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):
-            # print(decoder_output[bsz, sent_len[bsz], :].size(), target[bsz, sent_len[bsz]].size())
+        # print(decoder_output[bsz, sent_len[bsz], :].size(), target[bsz, sent_len[bsz]].size())
         #    loss1 += criterion1(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]])
-            #print(decoder_output[bsz, 0:sent_len[bsz], :])
-            #print(batch_num)
-            #print(target[bsz, 0:sent_len[bsz]])
-            #print(criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]]), loss.data)
+        #print(decoder_output[bsz, 0:sent_len[bsz], :])
+        #print(batch_num)
+        #print(target[bsz, 0:sent_len[bsz]])
+        #print(criterion(decoder_output[bsz, 0:sent_len[bsz], :], target[bsz, 0:sent_len[bsz]]), loss.data)
         #for di in range(decoder_output.size(1)): # decoder_output = batch_size X seq_len X vocabsize
         #     #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:, di])
@@ -262,7 +261,7 @@ def train():
         #exit(0)
 
         del sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
-        field_ununk , value_ununk, sent_mask, value_mask
+            field_ununk , value_ununk, sent_mask, value_mask
 
     #print(total_loss[0], total_words)
     train_losses.append(np.mean(losses))
@@ -297,13 +296,13 @@ def evaluate(data_source, data_order, test):
         loss = 0
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
         #for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
-            #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
+        #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])
         losses.append(loss.data[0])
         total_loss += loss.data
         total_words += sum(sent_len)
         del sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
-        field_ununk , value_ununk, sent_mask, value_mask
+            field_ununk , value_ununk, sent_mask, value_mask
     return np.mean(losses)
 
 best_val_loss = None
@@ -331,9 +330,9 @@ try:
             best_train_loss = tloss
 
             #best_val_loss = val_loss
-        #else:
+            #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
-        #    lr /= 2
+            #    lr /= 2
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')

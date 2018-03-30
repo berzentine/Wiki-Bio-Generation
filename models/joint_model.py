@@ -45,7 +45,7 @@ class Seq2SeqModel(nn.Module):
         #print torch.stack(encoder_output, dim=0).shape # (111L, 32L, 500L)
         #print encoder_hidden.shape
         # encoder_output is list of all "hiddens" at each time step, do we need cell state too?
-        decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z)
+        decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
         return decoder_output, decoder_hidden
 
     def update_vectors(self):

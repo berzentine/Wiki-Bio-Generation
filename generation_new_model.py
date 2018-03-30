@@ -198,10 +198,10 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         start_symbol = start_symbol.cuda()
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
     # print curr_input.shape()
-    prev_hidden = encoder_hidden
+    prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
     for i in range(max_length):
         # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output, prev_hidden = model.decoder.forward(curr_input, prev_hidden, encoder_output)
+        decoder_output, prev_hidden, attn_vector = model.decoder.forward(curr_input, prev_hidden, encoder_output)
         decoder_output = model.linear_out(decoder_output)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
@@ -210,15 +210,15 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         # exit(0)
         if dictionary.idx2word[int(max_idx)] == '<eos>':
             break
-        # if int(max_idx) == unk_symbol:
-        #     if cuda:
-        #         value_ununk = value_ununk.cuda()
-        #     unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0],0], 0)
-        #     sub = value_ununk[0][unk_max_idx] # should be value_ununk
-        #     word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
-        #     print("Unk got replaced with", word)
-        # else:
-        word = dictionary.idx2word[int(max_idx)]
+        if int(max_idx) == unk_symbol:
+             if cuda:
+                 value_ununk = value_ununk.cuda()
+             unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0]], 0)
+             sub = value_ununk[0][unk_max_idx] # should be value_ununk
+             word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
+             print("Unk got replaced with", word)
+        else:
+             word = dictionary.idx2word[int(max_idx)]
         gen_seq.append(dictionary.idx2word[int(max_idx)])
         unk_rep_seq.append(word)
         if dictionary.idx2word[int(max_idx)] == '<eos>':
@@ -242,7 +242,7 @@ def test_evaluate(data_source, data_order, test):
                     sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \
                     value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
                     ref_seq = []
-                    for i in range(1, len(actual_sent[0])):
+                    for i in range(1, len(actual_sent[0])-1):
                         ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])

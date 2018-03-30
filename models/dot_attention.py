@@ -72,20 +72,22 @@ class LSTMAttentionDot(nn.Module):
             hy = outgate * F.tanh(cy)  # n_b x hidden_dim
             h_tilde, alpha = self.attention_layer(hy, ctx)
 
-            return h_tilde, cy
+            return (h_tilde, cy), alpha
 
         if self.batch_first:
             input = input.transpose(0, 1)
 
         output = []
+        attn = []
         steps = range(input.size(0))
         for i in steps:
-            hidden = recurrence(input[i], hidden)
+            hidden, att = recurrence(input[i], hidden)
             output.append(hidden[0])
+            attn.append(att)
 
         output = torch.cat(output, 0).view(input.size(0), *output[0].size())
 
         if self.batch_first:
             output = output.transpose(0, 1)
 
-        return output, hidden
+        return output, hidden, attn

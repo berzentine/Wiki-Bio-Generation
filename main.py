@@ -21,7 +21,7 @@ from torch.autograd import Variable
 parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
-parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
+parser.add_argument('--limit', type=float, default=1,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')

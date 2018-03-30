@@ -207,7 +207,7 @@ def train():
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
         field_ununk , value_ununk, sent_mask, value_mask  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, value_mask)
+        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):
@@ -289,7 +289,7 @@ def evaluate(data_source, data_order, test):
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \
         value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, value_mask)
+        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 

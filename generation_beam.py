@@ -142,7 +142,7 @@ def generate_beam(self, value, field, ppos, pneg, batch_size, train, max_length,
     for j in range(beam):
         candidates[j].append(dictionary.idx2word[int(start_symbol)])
         candidate_scores[j].append(0)
-    
+
 
     decoder_output, prev_hidden = self.decoder.forward_plain(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
     #decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)

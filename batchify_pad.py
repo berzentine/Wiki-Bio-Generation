@@ -17,9 +17,12 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
     pneg = []
     pneg_length = []
 
-    datum = sorted(zip(data[4], data[0], data[1], data[2], data[3], data_ununk[0], data_ununk[1], data_ununk[2]), key=lambda tup: len(tup[0]))
+    datum = sorted(zip(data[4], data[0], data[1], data[2], data[3], data_ununk[0], data_ununk[1], data_ununk[2]), key=lambda tup: len(tup[1]), reverse=True)
+
     total_batches = len(datum)//batchsize
-    for d in range(0,total_batches):
+    datum = datum[0:total_batches*batchsize]
+    for d in range(0,len(datum), batchsize):
+        # TODO: ISsue is here
         temp_sentences_actual_length = []
         temp_sentences_padded = []
 
@@ -37,7 +40,14 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         temp_table_pneg_padded = []
         # padd sentences in batch
         batch_sent = datum[d:d+batchsize]
-        max_sent = len(batch_sent[-1][0])
+
+        max_sent = -100
+        for b in batch_sent: # find biggest table
+            if max_sent<len(b[0]):
+                max_sent=len(b[0])
+
+
+        #max_sent = len(batch_sent[-1][0])
         #print max_sent
         for b in batch_sent:
             temp_sentences_actual_length.append(len(b[0]))

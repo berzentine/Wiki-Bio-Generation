@@ -207,7 +207,7 @@ def train():
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
         field_ununk , value_ununk, sent_mask, value_mask  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward(sent, value, field, ppos, pneg, batchsize, value_mask)
+        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):

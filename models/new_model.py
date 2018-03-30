@@ -18,7 +18,7 @@ class Seq2SeqModelNew(nn.Module):
         self.decoder = nn.LSTM(input_size=sent_embed_size, hidden_size=encoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
         self.encoder = nn.LSTM(input_size=sent_embed_size, hidden_size=decoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
-        self.verbose = verbose
+        self.verbose = verbose   
         self.cuda_var = cuda_var
         self.init_weights()
 
@@ -29,11 +29,11 @@ class Seq2SeqModelNew(nn.Module):
         torch.nn.init.xavier_uniform(self.pneg_lookup.weight)
 
     def forward(self, sent, value, field, ppos, pneg, batch_size, value_mask):
-        input_d = self.sent_lookup(value)
+        input_d = self.sent_lookup(value) # batch X seq X emb
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
-        input = torch.cat((input_d,input_z), 2)
+        input = torch.cat((input_d,input_z), 2) # batch X seq X 4*emb
         encoder_output, encoder_hidden = self.encoder(input, None)
-        sent = self.sent_lookup(sent)
+        sent = self.sent_lookup(sent) # batch X seq X emb
         decoder_output, decoder_hidden = self.decoder(sent, encoder_hidden)
         decoder_output = self.linear_out(decoder_output)
         return decoder_output, decoder_hidden

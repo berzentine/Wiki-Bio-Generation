@@ -260,7 +260,10 @@ def train():
             batch_losses = []
             start_time = time.time()
         #exit(0)
-        del sent, sent_len, ppos, pneg, field, value, target, decoder_output, decoder_hidden
+
+        del sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+        field_ununk , value_ununk, sent_mask, value_mask
+
     #print(total_loss[0], total_words)
     train_losses.append(np.mean(losses))
 
@@ -299,6 +302,8 @@ def evaluate(data_source, data_order, test):
         losses.append(loss.data[0])
         total_loss += loss.data
         total_words += sum(sent_len)
+        del sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+        field_ununk , value_ununk, sent_mask, value_mask
     return np.mean(losses)
 
 best_val_loss = None
@@ -324,6 +329,7 @@ try:
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
             best_train_loss = tloss
+
             #best_val_loss = val_loss
         #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.

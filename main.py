@@ -198,7 +198,7 @@ def train():
     model.train()
     start_time = time.time()
     num_batches = 0
-    #random.shuffle(train_batches)
+    random.shuffle(train_batches)
     losses = []
     batch_losses = []
     for batch_num in train_batches:

@@ -201,7 +201,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
     prev_hidden = encoder_hidden
     for i in range(max_length):
         # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output, prev_hidden = model.decoder.forward(curr_input, prev_hidden)
+        decoder_output, prev_hidden = model.decoder.forward(curr_input, prev_hidden, encoder_output)
         decoder_output = model.linear_out(decoder_output)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)

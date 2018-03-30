@@ -70,7 +70,7 @@ class LSTMAttentionDot(nn.Module):
 
             cy = (forgetgate * cx) + (ingate * cellgate)
             hy = outgate * F.tanh(cy)  # n_b x hidden_dim
-            h_tilde, alpha = self.attention_layer(hy, ctx)
+            h_tilde, alpha = self.attention_layer.forward(hy, ctx)
 
             return (h_tilde, cy), alpha
 

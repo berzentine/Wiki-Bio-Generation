@@ -23,15 +23,10 @@ parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
 parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
 parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
 parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
-parser.add_argument('--seed', type=int, default=1,help='random seed')
-parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
-parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
-parser.add_argument('--field_emsize', type=int, default=50,help='size of field embeddings')
-parser.add_argument('--pos_emsize', type=int, default=5,help='size of position embeddings')
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
@@ -50,22 +45,10 @@ args = parser.parse_args()
 cuda = args.cuda
 verbose = args.verbose
 limit = args.limit
-total_epochs = args.epochs
-dropout = args.dropout
-seed = args.seed
-num_layers = args.nlayers
-word_emb_size = args.word_emsize
-field_emb_size = args.field_emsize
-pos_emb_size = args.pos_emsize
-hidden_size = args.nhid
-batchsize = args.batchsize
 data_path = args.data
 vocab_path = args.vocab
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
-lr = args.lr
-clip = args.clip
-log_interval = args.log_interval
 max_length = args.max_sent_length
 ref_path = args.ref_path
 gen_path = args.gen_path

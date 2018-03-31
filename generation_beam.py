@@ -35,6 +35,7 @@ parser.add_argument('--pos_emsize', type=int, default=5,help='size of position e
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
+parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced file')
 parser.add_argument('--beam_size', type=int, required=True, help='Beam size for performing beam search')
 
 """
@@ -68,6 +69,7 @@ log_interval = args.log_interval
 max_length = args.max_sent_length
 ref_path = args.ref_path
 gen_path = args.gen_path
+unk_gen_path = args.unk_gen_path
 beam_size = args.beam_size
 
 

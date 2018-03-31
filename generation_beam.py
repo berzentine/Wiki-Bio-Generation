@@ -171,9 +171,10 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
     for t in range(1, max_length):
         temp_scores, temp_hiddens , temp_inputs, temp_outputs = [], [], [], [] # store K ones here for each jth exploration in outputs
         for j in range(beam): # explore outputs[j] which is
+            sym  = Variable(torch.LongTensor(1,1).fill_(outputs[j]))
             if cuda:
-                outputs = outputs.cuda()
-            curr_input = model.sent_lookup(Variable(torch.LongTensor(1,1).fill_(outputs[j])))
+                sym = sym.cuda()
+            curr_input = model.sent_lookup(sym)
             decoder_output, attn_vector , prev_hidden = getDecoder(curr_input, hiddens[j], encoder_output)
             values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]

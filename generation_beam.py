@@ -169,7 +169,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
 
     # for time step 1 onwards till max_length time step
     for t in range(1, max_length):
-        temp_scores, temp_hiddens , temp_inputs, temp_outputs = [], [], [], [] # store K ones here for each jth exploration in outputs
+        temp_scores, temp_hiddens , temp_inputs, temp_outputs, temp_attention = [], [], [], [], [] # store K ones here for each jth exploration in outputs
         for j in range(beam): # explore outputs[j] which is
             sym  = Variable(torch.LongTensor(1,1).fill_(outputs[j]))
             if cuda:

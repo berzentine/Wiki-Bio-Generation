@@ -189,7 +189,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
                 temp_hiddens.append(prev_hidden)
                 temp_attention.append(attn_vector)
                 temp_inputs.append(outputs[j])
-        exit(0)
+
         zipped = zip(temp_outputs, temp_scores, temp_hiddens, temp_inputs, temp_attention)
         zipped.sort(key = lambda t: t[1], reverse=True)
         outputs, scores , hiddens, inputs, attns = [], [], [], [], []
@@ -209,7 +209,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
                 candidate_unk_replaced[j].append(replacement) # append a non UNK word here
             else:
                 candidate_unk_replaced[j].append(dictionary.idx2word[int(outputs[j])])
-
+        exit(0)
         #for j in range(beam): # update candidate vectors too with a + " "
     return candidates, candidate_unk_replaced, candidate_scores
 

@@ -32,7 +32,7 @@ parser.add_argument('--ref_path', type=str, required=True, help='Path for storin
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
 parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced file')
 parser.add_argument('--beam_size', type=int, required=True, help='Beam size for performing beam search')
-
+parser.add_argument('--seed', type=int, default=1,help='random seed')
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
 Outputs:
@@ -46,6 +46,7 @@ cuda = args.cuda
 verbose = args.verbose
 limit = args.limit
 data_path = args.data
+seed = args.seed
 vocab_path = args.vocab
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path

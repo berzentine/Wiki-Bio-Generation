@@ -178,13 +178,13 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
                 sym = sym.cuda()
             curr_input = model.sent_lookup(sym)
             decoder_output, attn_vector , prev_hidden = getDecoder(curr_input, hiddens[j], encoder_output)
-            print 'Scores' , scores
-            values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
-            print 'Scores after' ,indices, scores[j]
+            #print 'Scores' , scores
+            values, indices = torch.topk(decoder_output, beam, 2)
+            #print 'Scores after' ,indices, scores[j]
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
                 #print indices[0,0,p].squeeze().data[0]
                 temp_outputs.append(indices[0,0,p].squeeze().data[0])
-                temp_scores.append(values[0,0,j].squeeze().data[0])
+                temp_scores.append(torch.log(values[0,0,j].squeeze().data[0])+scores[j])
                 temp_hiddens.append(prev_hidden)
                 temp_attention.append(attn_vector)
                 temp_inputs.append(outputs[j])

@@ -169,7 +169,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
 
 
 
-    # for time step 1 onwards till max_length time step
+    # for time step 1 onwards till max_length time step, explore each output j and after seeing all j, just update the k vector of best ones again
     for t in range(1, max_length):
         temp_scores, temp_hiddens , temp_inputs, temp_outputs, temp_attention = [], [], [], [], [] # store K ones here for each jth exploration in outputs
         for j in range(beam): # explore outputs[j] which is
@@ -180,19 +180,21 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
             decoder_output, attn_vector , prev_hidden = getDecoder(curr_input, hiddens[j], encoder_output)
             #print 'Scores' , scores
             values, indices = torch.topk(decoder_output, beam, 2)
+            print indices
             #print 'Scores after' ,indices, scores[j]
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
                 #print indices[0,0,p].squeeze().data[0]
                 temp_outputs.append(indices[0,0,p].squeeze().data[0])
-                temp_scores.append(torch.log(values[0,0,j].squeeze().data[0])+scores[j])
+                temp_scores.append(math.log(values[0,0,j].squeeze().data[0])+scores[j])
                 temp_hiddens.append(prev_hidden)
                 temp_attention.append(attn_vector)
                 temp_inputs.append(outputs[j])
+        exit(0)
         zipped = zip(temp_outputs, temp_scores, temp_hiddens, temp_inputs, temp_attention)
         zipped.sort(key = lambda t: t[1], reverse=True)
         outputs, scores , hiddens, inputs, attns = [], [], [], [], []
         for j in range(beam):
-            print zipped[j][0]
+            #print zipped[j][0]
             outputs.append(zipped[j][0])
             scores.append(zipped[j][1])
             hiddens.append(zipped[j][2])
@@ -292,7 +294,6 @@ def test_evaluate(data_source, data_order, test):
                     zipped.sort(key = lambda t: t[0], reverse=True)
                     gen_seq = zipped[0][1]
                     unk_gen_seq = zipped[0][2]
-
                     for r in ref_seq:
                         rp.write(r+" ")
                     for g in gen_seq:

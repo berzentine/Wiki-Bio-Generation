@@ -151,9 +151,9 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
 
     # for step time = 0 make beam_size updates
     for j in range(beam):
-        print indices, indices[0,0,j].squeeze().data[0]
+        #print indices, indices[0,0,j].squeeze().data[0]
         outputs.append(indices[0,0,j].squeeze().data[0]) # what was the otput during this state
-        print outputs
+        #print outputs
         scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
         hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
         inputs.append(curr_input) # what was the input during this state
@@ -178,10 +178,11 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
                 sym = sym.cuda()
             curr_input = model.sent_lookup(sym)
             decoder_output, attn_vector , prev_hidden = getDecoder(curr_input, hiddens[j], encoder_output)
-            print scores
+            #print scores
             values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
+            print indices, scores[j]
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
-                print indices[0,0,p].squeeze().data[0]
+                #print indices[0,0,p].squeeze().data[0]
                 temp_outputs.append(indices[0,0,p].squeeze().data[0])
                 temp_scores.append(values[0,0,j].squeeze().data[0])
                 temp_hiddens.append(prev_hidden)

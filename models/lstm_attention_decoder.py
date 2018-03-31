@@ -10,7 +10,7 @@ from models.dot_attention import SoftDotAttention
 class LSTMAttention(nn.Module):
     r"""A long short-term memory (LSTM) cell with attention."""
 
-    def __init__(self, input_size, hidden_size, batch_first=True):
+    def __init__(self, input_size, hidden_size, encoder_hidden_size, batch_first=True):
         """Initialize params."""
         super(LSTMAttention, self).__init__()
         self.input_size = input_size
@@ -21,7 +21,7 @@ class LSTMAttention(nn.Module):
         self.input_weights = nn.Linear(input_size, 4 * hidden_size)
         self.hidden_weights = nn.Linear(hidden_size, 4 * hidden_size)
 
-        self.attention_layer = SingleAttention(hidden_size)
+        self.attention_layer = SingleAttention(encoder_hidden_size, hidden_size)
 
     def forward(self, input, hidden, ctx, ctx_mask=None):
         """Propogate input through the network."""

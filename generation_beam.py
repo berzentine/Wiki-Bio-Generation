@@ -155,15 +155,15 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
         hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
         inputs.append(curr_input) # what was the input during this state
-        candidates[j].append(dictionary.idx2word[int(outputs[j][0])]) # update candidate vectors too with a + " "
-        candidate_scores[j].append(scores[j][0])
+        candidates[j].append(dictionary.idx2word[int(outputs[j])]) # update candidate vectors too with a + " "
+        candidate_scores[j].append(scores[j])
         atts.append(attn_vector)
-        if int(outputs[j][0]) == unk_symbol:
+        if int(outputs[j]) == unk_symbol:
             if cuda: value_ununk = value_ununk.cuda()
             replacement = getUNKrep(attn_vector, value_len, value_ununk, ununk_dictionary)
             candidate_unk_replaced[j].append(replacement) # append a non UNK word here
         else:
-            candidate_unk_replaced[j].append(dictionary.idx2word[int(outputs[j][0])])
+            candidate_unk_replaced[j].append(dictionary.idx2word[int(outputs[j])])
 
 
 
@@ -191,12 +191,12 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
             atts.append(zipped[j][4])
             candidates[j].append(dictionary.idx2word[int(outputs[j])])
             candidate_scores[j].append(scores[j])
-            if int(outputs[j][0]) == unk_symbol:
+            if int(outputs[j]) == unk_symbol:
                 if cuda: value_ununk = value_ununk.cuda()
                 replacement = getUNKrep(atts[j], value_len, value_ununk, ununk_dictionary)
                 candidate_unk_replaced[j].append(replacement) # append a non UNK word here
             else:
-                candidate_unk_replaced[j].append(dictionary.idx2word[int(outputs[j][0])])
+                candidate_unk_replaced[j].append(dictionary.idx2word[int(outputs[j])])
 
         #for j in range(beam): # update candidate vectors too with a + " "
     return candidates, candidate_unk_replaced, candidate_scores

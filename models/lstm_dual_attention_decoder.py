@@ -7,12 +7,12 @@ from models.single_attention import SingleAttention
 from models.dot_attention import SoftDotAttention
 from models.dual_attention import DualAttention
 
-class LSTMAttention(nn.Module):
+class LSTMDualAttention(nn.Module):
     r"""A long short-term memory (LSTM) cell with attention."""
 
     def __init__(self, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):
         """Initialize params."""
-        super(LSTMAttention, self).__init__()
+        super(LSTMDualAttention, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = 1

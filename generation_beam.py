@@ -151,7 +151,9 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
 
     # for step time = 0 make beam_size updates
     for j in range(beam):
+        #print indices, indices[0,0,j].squeeze().data[0]
         outputs.append(indices[0,0,j].squeeze().data[0]) # what was the otput during this state
+        #print outputs
         scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
         hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
         inputs.append(curr_input) # what was the input during this state
@@ -176,8 +178,11 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
                 sym = sym.cuda()
             curr_input = model.sent_lookup(sym)
             decoder_output, attn_vector , prev_hidden = getDecoder(curr_input, hiddens[j], encoder_output)
+            #print scores
             values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
+            print indices, scores[j]
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
+                #print indices[0,0,p].squeeze().data[0]
                 temp_outputs.append(indices[0,0,p].squeeze().data[0])
                 temp_scores.append(values[0,0,j].squeeze().data[0])
                 temp_hiddens.append(prev_hidden)
@@ -187,12 +192,13 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         zipped.sort(key = lambda t: t[1], reverse=True)
         outputs, scores , hiddens, inputs, attns = [], [], [], [], []
         for j in range(beam):
+            print zipped[j][0]
             outputs.append(zipped[j][0])
             scores.append(zipped[j][1])
             hiddens.append(zipped[j][2])
             inputs.append(zipped[j][3])
             atts.append(zipped[j][4])
-            print len(outputs), len(candidates), j, outputs[j]
+            #print len(outputs), len(candidates), j, outputs[j]
             candidates[j].append(dictionary.idx2word[int(outputs[j])])
             candidate_scores[j].append(scores[j])
             if int(outputs[j]) == unk_symbol:

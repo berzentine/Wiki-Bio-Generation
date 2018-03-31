@@ -192,7 +192,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         zipped.sort(key = lambda t: t[1], reverse=True)
         outputs, scores , hiddens, inputs, attns = [], [], [], [], []
         for j in range(beam):
-            print zipped[j][0]
+            #print zipped[j][0]
             outputs.append(zipped[j][0])
             scores.append(zipped[j][1])
             hiddens.append(zipped[j][2])

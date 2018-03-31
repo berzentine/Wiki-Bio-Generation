@@ -192,7 +192,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
             hiddens.append(zipped[j][2])
             inputs.append(zipped[j][3])
             atts.append(zipped[j][4])
-            print len(outputs), len(candidates), j
+            print len(outputs), len(candidates), j, outputs[j]
             candidates[j].append(dictionary.idx2word[int(outputs[j])])
             candidate_scores[j].append(scores[j])
             if int(outputs[j]) == unk_symbol:

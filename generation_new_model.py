@@ -256,6 +256,7 @@ def test_evaluate(data_source, data_order, test):
                         rp.write(r+" ")
                     for g in gen_seq:
                         gp.write(g+" ")
+
                     #wp.write("DOCID: "+str(index))
                     up.write("\n\n")
                     rp.write("\n\n")

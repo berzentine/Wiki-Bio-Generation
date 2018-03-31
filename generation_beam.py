@@ -116,6 +116,96 @@ if verbose:
     print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
     print('='*32)
 
+def generate_beam(self, value, field, ppos, pneg, batch_size, train, max_length, start_symbol, end_symbol, dictionary, beam, verbose):
+    """input_d = model.sent_lookup(value)
+    input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
+    encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
+    if cuda:
+        encoder_initial_hidden = encoder_initial_hidden.cuda()
+    encoder_output, encoder_hidden = model.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
+    encoder_output = torch.stack(encoder_output, dim=0)
+    encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))"""
+    gen_seq = []
+    unk_gen_seq = []
+    #gen_seq.append('<sos>')
+
+    start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
+    if cuda:
+        start_symbol = start_symbol.cuda()
+    curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
+    prev_hidden = None
+
+    outputs, scores , hiddens, inputs, candidates, candidate_unk_replaced = [], [], [], [], [[] for k in range(beam)], [[] for k in range(beam)]
+    candidate_scores = [[] for k in range(beam)]
+
+    # intialize the candidate scores and candidates to start with
+    for j in range(beam):
+        candidates[j].append(dictionary.idx2word[int(start_symbol)])
+        candidate_scores[j].append(0)
+
+
+    decoder_output, prev_hidden = self.decoder.forward_plain(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+    #decoder_output, prev_hidden = self.decoder.forward(input=curr_input, hidden=prev_hidden, encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+    decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
+    values, indices = torch.topk(decoder_output, beam, 2)
+    for j in range(beam): # for step time = 0
+        outputs.append(indices[0,0,j].squeeze().data[0]) # what was the otput during this state
+        scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
+        hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state
+        inputs.append(curr_input) # what was the input during this state
+        #candidates[j].append(int(outputs[j])) # update candidate vectors too with a + " "
+        candidates[j].append(dictionary.idx2word[int(outputs[j])])
+        candidate_scores[j].append(scores[j])
+    #print indices, 'start after sos'
+
+
+    for i in range(max_length-1):
+        # store k X K ones here for each jth exploration in outputs
+        temp_scores, temp_hiddens , temp_inputs, temp_outputs = [], [], [], []
+        for j in range(beam):
+            # explore outputs[j]
+            #print 'For index', outputs[j],
+            curr_input = self.sent_lookup(Variable(torch.LongTensor(1,1).fill_(outputs[j])))
+            # prev_hidden is an issue here
+            decoder_output, prev_hidden = self.decoder.forward_plain(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+            #decoder_output, prev_hidden, attn_vector = self.decoder.forward(input=curr_input, hidden=hiddens[j], encoder_hidden=torch.stack(encoder_output, dim=0), input_z=input_z)
+            decoder_output = torch.nn.functional.softmax(decoder_output, dim = 2)
+            #print decoder_output
+            values, indices = torch.topk(torch.log(decoder_output)+scores[j], beam, 2)
+            #print values, indices, 'is the top k'
+
+            for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
+                temp_outputs.append(indices[0,0,p].squeeze().data[0])
+                temp_scores.append(values[0,0,j].squeeze().data[0])
+                temp_hiddens.append(prev_hidden)
+                temp_inputs.append(outputs[j]) # issue is here
+        #exit(0)
+        #print '='*32
+        # if explore all options
+        # take top k and update actual vectors again
+        if verbose:
+            print ('This', len(temp_scores), 'should be beam*beam size')
+        zipped = zip(temp_outputs, temp_scores, temp_hiddens, temp_inputs)
+        zipped.sort(key = lambda t: t[1], reverse=True)
+        #print len(zipped), type(zipped[0]) # 25 <type 'tuple'>
+        outputs, scores , hiddens, inputs = [], [], [], []
+        for j in range(beam):
+            outputs.append(zipped[j][0])
+            scores.append(zipped[j][1])
+            hiddens.append(zipped[j][2])
+            inputs.append(zipped[j][3])
+            #candidates[j].append(int(outputs[j]))
+            candidates[j].append(dictionary.idx2word[int(outputs[j])])
+            candidate_scores[j].append(scores[j])
+
+        #for j in range(beam): # update candidate vectors too with a + " "
+
+    if verbose:
+        print(candidates)
+        print(candidate_scores)
+
+    return candidates, candidate_unk_replaced, candidate_scores
+
 
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
@@ -150,41 +240,46 @@ train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 def test_evaluate(data_source, data_order, test):
     gold_set = []
     pred_set = []
+    pred_ununkset = []
     with open(ref_path, 'w') as rp:
         with open(gen_path, 'w') as gp:
-            total_loss = total_words = 0
-            model.eval()
-            start_time = time.time()
-            random.shuffle(data_order)
-            for batch_num in data_order:
-                sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
-                ref_seq = []
-                for i in range(0, len(actual_sent[0])):
-                    ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
-                    #if WORD_VOCAB_SIZE>int(sent[0][i]):
-                    #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                candidates, candidate_scores = model.generate_beam(value, field, ppos, pneg, 1, False, max_length, \
-                                                       corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, beam_size, verbose)
-                #print ref_seq
-                #print gen_seq
-                #index+=1
-                #print '='*32
-                gen_seq = []
-                score  = [0 for k in range(beam_size)]
-                for k in range(beam_size):
-                    for i in range(len(candidate_scores[k])):
-                        score[k]+=candidate_scores[k][i]
-                zipped = zip(score, candidates)
-                zipped.sort(key = lambda t: t[0], reverse=True)
-                gen_seq = zipped[0][1]
-                for r in ref_seq:
-                    rp.write(r+" ")
-                for g in gen_seq:
-                    gp.write(g+" ")
-                rp.write("\n\n")
-                gp.write("\n\n")
-                gold_set.append(ref_seq)
-                pred_set.append(gen_seq)
+            with open(unk_gen_path, 'w') as up:
+                total_loss = total_words = 0
+                model.eval()
+                start_time = time.time()
+                #random.shuffle(data_order)
+                for batch_num in data_order:
+                    sent, sent_len, ppos, pneg, field, value, target, actual_sent = get_data(data_source, batch_num, True)
+                    ref_seq = []
+                    for i in range(1, len(actual_sent[0])-1):
+                        ref_seq.append(corpus.word_vocab.idx2word[int(actual_sent[0][i])])
+                        #if WORD_VOCAB_SIZE>int(sent[0][i]):
+                        #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
+                    candidates, candidate_unk_replaced, candidate_scores = generate_beam(value, field, ppos, pneg, 1, False, max_length, \
+                                                           corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, beam_size, verbose)
+                    gen_seq = []
+                    unk_gen_seq = []
+
+                    score  = [0 for k in range(beam_size)]
+                    for k in range(beam_size):
+                        for i in range(len(candidate_scores[k])):
+                            score[k]+=candidate_scores[k][i]
+                    zipped = zip(score, candidates, candidate_unk_replaced)
+                    zipped.sort(key = lambda t: t[0], reverse=True)
+                    gen_seq = zipped[0][1]
+                    unk_gen_seq = zipped[0][2]
+                    for r in ref_seq:
+                        rp.write(r+" ")
+                    for g in gen_seq:
+                        gp.write(g+" ")
+                    for u in unk_gen_seq:
+                        up.write(u+" ")
+                    rp.write("\n\n")
+                    gp.write("\n\n")
+                    up.write("\n\n")
+                    gold_set.append(ref_seq)
+                    pred_set.append(gen_seq)
+                    pred_ununkset.append(unk_gen_seq)
     import os
     os.system("echo \"************ Python scores ************\"")
     bleu = corpus_bleu(gold_set, pred_set)

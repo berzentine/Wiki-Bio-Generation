@@ -55,8 +55,8 @@ ref_path = args.ref_path
 gen_path = args.gen_path
 unk_gen_path = args.unk_gen_path
 beam_size = args.beam_size
-
-
+batch_size = 1
+batchsize = 1
 print("Load embedding")
 emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
 #w2v_vocab, emb_vec = torchwordemb.load_word2vec_bin(emb_path)

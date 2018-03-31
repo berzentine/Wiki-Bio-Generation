@@ -4,106 +4,35 @@ import torch.nn.functional as F
 
 
 class DualAttention(nn.Module):
-    def __init__(self, encoder_hidden_size, decoder_hidden_size, field_embed_size, verbose):
+    def __init__(self, encoder_hidden_size, decoder_hidden_size, field_rep_size):
         super(DualAttention, self).__init__()
-        self.lin1 = nn.Linear(encoder_hidden_size, decoder_hidden_size)
-        self.lin2 = nn.Linear(decoder_hidden_size, decoder_hidden_size)
-        self.lin3 = nn.Linear(field_embed_size, decoder_hidden_size)
-        self.lin4 = nn.Linear(decoder_hidden_size, decoder_hidden_size)
-        self.tanh = nn.Tanh()
-        self.verbose = verbose
+        self.lin_encoder = nn.Linear(encoder_hidden_size, decoder_hidden_size)
+        self.lin_decoder_alpha = nn.Linear(decoder_hidden_size, decoder_hidden_size)
+        self.lin_decoder_beta = nn.Linear(decoder_hidden_size, decoder_hidden_size)
+        self.lin_z = nn.Linear(field_rep_size, decoder_hidden_size)
 
-    def forward_vanilla(self, output, encoder_hidden, input_z, mask):
-        out_hs = self.tanh(self.lin1(encoder_hidden))
-        out_hs = out_hs.view(out_hs.size(1), out_hs.size(0), out_hs.size(2))
-        if self.verbose: print(out_hs.size())
-        encoder_hidden = encoder_hidden.view(encoder_hidden.size(1), encoder_hidden.size(0), encoder_hidden.size(2))
-        # out_fds = self.tanh(self.lin3(input_z))
-        # if self.verbose: print(out_fds.size())
-        a = []
-        out2 = self.tanh(self.lin2(output))
-        if self.verbose: print(out2.size())
-        # out3 = self.tanh(self.lin4(output))
-        # if self.verbose: print(out3.size())
-        attn = []
-        concat_vectors = []
-        for i in range(out2.size(1)):
-            if self.verbose: print(out2[:, i, :].unsqueeze(1).size())
-            g1 = torch.mul(out_hs, out2[:, i, :].unsqueeze(1))
-            g1 = torch.sum(g1, dim=2, keepdim=True)
+        self.linear_out = nn.Linear(decoder_hidden_size * 2, decoder_hidden_size, bias=False)
 
-            # if mask[:, i] is not None:
-            #     g1.masked_fill_(mask[:,i], -float('inf'))
+    def forward(self, input, context, input_z):
+        projected_context = F.tanh(self.lin_encoder(context)) #batch * encoder_seqL * encoder_hidden
+        projected_input = F.tanh(self.lin_decoder_alpha(input)).unsqueeze(2)  # batch * decoder_hidden * 1
+        attn_dot = torch.bmm(projected_context, projected_input).squeeze(2) #batch * encoder_seqL
+        alpha = F.softmax(attn_dot, dim=1)
+        # reshaped_attn = attn.view(attn.size(0), 1, attn.size(1))  #batch * 1 * encoder_seqL
 
-            val, idx = torch.max(g1, dim=1, keepdim=True)
-            g1 = torch.exp(g1 - val)
-            alpha_t = g1.div(1e-6+torch.sum(g1, dim=1, keepdim=True))
-            if self.verbose: print(g1.size())
-            # alpha_t = F.softmax(g1, 1)
-            # alpha_t = alpha_t * mask[:,i]
-            if self.verbose: print(alpha_t.size())
-            a_t = alpha_t*encoder_hidden
-            attn_vector = torch.sum(a_t, dim=1)
-            if self.verbose: print(attn_vector.size())
-            concat_v = torch.cat((attn_vector, output[:, i, :]), 1)
-            attn.append(alpha_t)
-            concat_vectors.append(concat_v)
-        return concat_vectors, attn
+        projected_inputz = F.tanh(self.lin_z(input_z)) #batch * encoder_seqL * encoder_hidden
+        projected_input = F.tanh(self.lin_decoder_beta(input)).unsqueeze(2)  # batch * decoder_hidden * 1
+        attn_dot = torch.bmm(projected_inputz, projected_input).squeeze(2) #batch * encoder_seqL
+        beta = F.softmax(attn_dot, dim=1)
 
+        gamma = alpha*beta #batch * encoder_seqL
+        l1_norm = torch.sum(gamma, dim=1, keepdim=True)
+        gamma = gamma.div(l1_norm) #batch * encoder_seqL
 
-    def forward_dual(self, output, encoder_hidden, input_z, mask):
-        out_hs = self.tanh(self.lin1(encoder_hidden))
-        out_hs = out_hs.view(out_hs.size(1), out_hs.size(0), out_hs.size(2))
-        if self.verbose: print(out_hs.size())
-        encoder_hidden = encoder_hidden.view(encoder_hidden.size(1), encoder_hidden.size(0), encoder_hidden.size(2))
-        out_fds = self.tanh(self.lin3(input_z))
-        if self.verbose: print(out_fds.size())
-        a = []
-        out2 = self.tanh(self.lin2(output))
-        if self.verbose: print(out2.size())
-        out3 = self.tanh(self.lin4(output))
-        if self.verbose: print(out3.size())
-        attn = []
-        concat_vectors = []
-        for i in range(out2.size(1)):
-            if self.verbose: print(out2[:, i, :].unsqueeze(1).size())
-            g1 = torch.mul(out_hs, out2[:, i, :].unsqueeze(1))
-            g1 = torch.sum(g1, dim=2, keepdim=True)
-            val, idx = torch.max(g1, dim=1, keepdim=True)
-            g1 = torch.exp(g1 - val)
-            alpha_t = g1.div(1e-6+torch.sum(g1, dim=1, keepdim=True))
-            if self.verbose: print(g1.size())
-            if self.verbose: print(alpha_t.size())
-            if self.verbose: print(out3[:, i, :].unsqueeze(1).size())
-            g2 = torch.mul(out_fds, out3[:, i, :].unsqueeze(1))
-            g2 = torch.sum(g2, dim=2, keepdim=True)
-            val, idx = torch.max(g2, dim=1, keepdim=True)
-            g2 = torch.exp(g2 - val)
-            beta_t = g2.div(1e-6+torch.sum(g2, dim=1, keepdim=True))
-            if self.verbose: print(g2.size())
-            if self.verbose: print(beta_t.size())
+        reshaped_attn = gamma.view(gamma.size(0), 1, gamma.size(1))  #batch * 1 * encoder_seqL
 
-            q = alpha_t*beta_t
-            if self.verbose: print(q.size())
+        weighted_context = torch.bmm(reshaped_attn, context).squeeze(1) #batch * encoder_hidden
+        h_tilde = torch.cat((weighted_context, input), 1)
+        h_tilde = F.tanh(self.linear_out(h_tilde))
 
-            # if mask[:, i] is not None:
-            #     q.masked_fill_(mask[:,i], -float('inf'))
-
-            qn = torch.sum(q, dim=1, keepdim=True)
-            if self.verbose: print(qn.size())
-            gamma = q.div(1e-6+qn)
-            # gamma = q.div(qn.expand_as(q))
-            # gamma = gamma*mask[:,i].unsqueeze(1)
-            if self.verbose: print(gamma.size())
-            a_t = gamma*encoder_hidden
-            #a_t = torch.bmm(gamma.unsqueeze(1), encoder_hidden)
-            #print(a_t.size())
-            contex = torch.sum(a_t, dim=1)
-            # print(contex.size(), output[:, i, :].size())
-            if self.verbose: print(contex.size())
-            concat_v = torch.cat((contex, output[:, i, :]), 1)
-            attn.append(gamma)
-            concat_vectors.append(concat_v)
-            #print(output[:, i, :])
-            #print(concat_v)
-        return concat_vectors, attn
+        return h_tilde, gamma

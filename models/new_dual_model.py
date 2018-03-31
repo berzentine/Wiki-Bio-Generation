@@ -51,6 +51,6 @@ class Seq2SeqDualModel(nn.Module):
         #encoder_hidden = None
         sent = self.sent_lookup(sent)
         encoder_hidden = (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
-        decoder_output, decoder_hidden, attn = self.decoder.forward(sent, input_z, encoder_hidden, encoder_output)
+        decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         decoder_output = self.linear_out(decoder_output)
         return decoder_output, decoder_hidden

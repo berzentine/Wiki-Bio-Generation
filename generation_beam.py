@@ -184,7 +184,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
             for p in range(beam): # append to temp_scores and all temp vectors the top k of outputs of [j]
                 #print indices[0,0,p].squeeze().data[0]
                 temp_outputs.append(indices[0,0,p].squeeze().data[0])
-                temp_scores.append(torch.log(values[0,0,j].squeeze().data[0])+scores[j])
+                temp_scores.append(Math.log(values[0,0,j].squeeze().data[0])+scores[j])
                 temp_hiddens.append(prev_hidden)
                 temp_attention.append(attn_vector)
                 temp_inputs.append(outputs[j])

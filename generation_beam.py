@@ -151,6 +151,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
 
     # for step time = 0 make beam_size updates
     for j in range(beam):
+        print indices, indices[0,0,j].squeeze().data[0]
         outputs.append(indices[0,0,j].squeeze().data[0]) # what was the otput during this state
         scores.append(torch.log(values[0,0,j]).squeeze().data[0]) # what was the score of otput during this state
         hiddens.append(prev_hidden) # what was the produced hidden state for otput during this state

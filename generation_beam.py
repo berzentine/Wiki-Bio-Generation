@@ -127,7 +127,7 @@ def getUNKrep(attn_vector, value_len, value_ununk, ununk_dictionary):
     word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
     return word
 
-def generate_beam(value, value_len, field, ppos, pneg, batch_size, \
+def generate(value, value_len, field, ppos, pneg, batch_size, \
              train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
              ununk_dictionary, value_ununk, value_mask, sent, beam):
     outputs, scores , hiddens, inputs, atts  = [], [], [], [], []

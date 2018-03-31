@@ -40,7 +40,7 @@ parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied t
 parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=100,help='epochs')
-parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
+parser.add_argument('--max_sent_length', type=int, default=64 ,help='maximum sentence length for decoding')
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
 parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced generated file')

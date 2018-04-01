@@ -19,10 +19,6 @@ class SoftDotAttention(nn.Module):
         self.mask = None
 
     def forward(self, input, context):
-        """Propogate input through the network.
-        input: batch x dim
-        context: batch x sourceL x dim
-        """
         target = self.linear_in(input).unsqueeze(2)  # batch x dim x 1
 
         # Get attention

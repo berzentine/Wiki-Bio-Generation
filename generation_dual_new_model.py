@@ -141,7 +141,10 @@ if verbose:
 
 
 def plot_attention(src_words, trg_words, attention_matrix, file_name=None):
-    """This takes in source and target words and an attention matrix (in numpy format)
+    """
+    Adapted from https://github.com/neubig/nn4nlp-code
+
+    This takes in source and target words and an attention matrix (in numpy format)
     and prints a visualization of this to a file.
     :param src_words: a list of words in the source
     :param trg_words: a list of target words
@@ -348,4 +351,4 @@ def test_evaluate(data_source, data_order, test):
 with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 # Run on test data.
-test_evaluate(corpus.train, train_batches, test=True)
+test_evaluate(corpus.test, test_batches, test=True)

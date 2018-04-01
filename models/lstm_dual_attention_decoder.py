@@ -8,10 +8,7 @@ from models.dot_attention import SoftDotAttention
 from models.dual_attention import DualAttention
 
 class LSTMDualAttention(nn.Module):
-    r"""A long short-term memory (LSTM) cell with attention."""
-
     def __init__(self, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):
-        """Initialize params."""
         super(LSTMDualAttention, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -24,9 +21,7 @@ class LSTMDualAttention(nn.Module):
         self.attention_layer = DualAttention(encoder_hidden_size, hidden_size, field_rep_size)
 
     def forward(self, input, hidden, input_z, ctx, ctx_mask=None):
-        """Propogate input through the network."""
         def recurrence(input, hidden):
-            """Recurrence helper."""
             hx, cx = hidden  # n_b x hidden_dim
             gates = self.input_weights(input) + \
                     self.hidden_weights(hx)

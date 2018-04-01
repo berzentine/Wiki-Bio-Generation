@@ -6,3 +6,5 @@ saved_models/
 .DS_Store
 *txt
 *txt.tokenized
+rouge_split/
+attn_matrices/

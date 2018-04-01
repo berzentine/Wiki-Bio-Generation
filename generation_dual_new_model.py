@@ -4,6 +4,7 @@ import torchwordemb
 import math
 import time
 import argparse
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,11 +12,18 @@ import data_reader_replicated as data_reader
 import random
 from batchify_pad import batchify
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-from models.joint_model import Seq2SeqModel
+#from models.joint_model import Seq2SeqModel
 from utils.plot_utils import plot
 from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
-from PythonROUGE import PythonROUGE
+import matplotlib
+matplotlib.use('Agg')
+
+from matplotlib.font_manager import FontProperties
+from matplotlib import rcParams
+import pdb as pdb
+import matplotlib.pyplot as plt
+import six
 
 ###############################################################################
 # Parse command line arguments
@@ -130,6 +138,48 @@ if verbose:
     print('='*32)
 
 
+
+
+def plot_attention(src_words, trg_words, attention_matrix, file_name=None):
+    """This takes in source and target words and an attention matrix (in numpy format)
+    and prints a visualization of this to a file.
+    :param src_words: a list of words in the source
+    :param trg_words: a list of target words
+    :param attention_matrix: a two-dimensional numpy array of values between zero and one,
+     where rows correspond to source words, and columns correspond to target words
+    :param file_name: the name of the file to which we write the attention
+    """
+    fig, ax = plt.subplots()
+    #a lazy, rough, approximate way of making the image large enough
+    fig.set_figwidth(int(len(trg_words)*.6))
+
+    # put the major ticks at the middle of each cell
+    ax.set_xticks(np.arange(attention_matrix.shape[1]) + 0.5, minor=False)
+    ax.set_yticks(np.arange(attention_matrix.shape[0]) + 0.5, minor=False)
+    ax.invert_yaxis()
+
+    # label axes by words
+    ax.set_xticklabels(trg_words, minor=False)
+    ax.set_yticklabels(src_words, minor=False)
+    ax.xaxis.tick_top()
+    plt.setp(ax.get_xticklabels(), rotation=50, horizontalalignment='right')
+    # draw the heatmap
+    plt.pcolor(attention_matrix, cmap=plt.cm.Blues, vmin=0, vmax=1)
+    plt.colorbar()
+
+    if file_name != None:
+      plt.savefig(file_name, dpi=100)
+    else:
+      plt.show()
+    plt.close()
+
+
+
+
+
+
+
+
 def get_data(data_source, num, evaluation):
     batch = data_source['sent'][num]
     field = data_source['field'][num]
@@ -200,15 +250,17 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
     # print curr_input.shape()
     prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
+    attention_matrix = []
     for i in range(max_length):
         # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output, prev_hidden, attn_vector = model.decoder.forward(curr_input, prev_hidden, encoder_output)
+        decoder_output, prev_hidden, attn_vector = model.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
         decoder_output = model.linear_out(decoder_output)
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
         # TODO: Issue here
         # print curr_input.shape()
         # exit(0)
+        attention_matrix.append(attn_vector[0][0,:value_len[0]].data.cpu().numpy())
         if dictionary.idx2word[int(max_idx)] == '<eos>':
             break
         if int(max_idx) == unk_symbol:
@@ -224,7 +276,9 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         unk_rep_seq.append(word)
         if dictionary.idx2word[int(max_idx)] == '<eos>':
             break
-    return gen_seq, unk_rep_seq
+    #print(np.stack(attention_matrix))
+    #exit(0)
+    return gen_seq, unk_rep_seq, np.stack(attention_matrix)
 
 
 
@@ -235,6 +289,7 @@ def test_evaluate(data_source, data_order, test):
     with open(unk_gen_path, 'w') as up:
         with open(ref_path, 'w') as rp:
             with open(gen_path, 'w') as gp:
+                k=0
                 total_loss = total_words = 0
                 model.eval()
                 start_time = time.time()
@@ -247,10 +302,9 @@ def test_evaluate(data_source, data_order, test):
                         ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
                         #if WORD_VOCAB_SIZE>int(sent[0][i]):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
-                    gen_seq, unk_rep_seq = generate(value, value_len, field, ppos, pneg, batchsize, False, max_length, \
+                    gen_seq, unk_rep_seq, attn_matrix = generate(value, value_len, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
-                                                    corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, value_mask, actual_sent)
-
+                                                    corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, value_mask, actual_sent)                    
                     for u in unk_rep_seq:
                         up.write(u+" ")
                     for r in ref_seq:
@@ -266,6 +320,12 @@ def test_evaluate(data_source, data_order, test):
                     gold_set.append(ref_seq)
                     pred_set.append(gen_seq)
                     unk_set.append(unk_rep_seq)
+                    #print([corpus.word_vocab.idx2word[int(x)] for x in value[0]])
+                    #print(ref_seq)
+                    #print([corpus.word_vocab.idx2word[int(x)] for x in value_ununk[0]])
+                    #plot_attention(unk_rep_seq, [corpus.word_vocab.idx2word[int(x)] for x in value[0]], attn_matrix, file_name="./attn_matrices/"+str(k)+".png")
+                    k+=1
+                    #exit(0)
     import os
     os.system("echo \"************ Python scores ************\"")
     bleu = corpus_bleu(gold_set, pred_set)
@@ -288,4 +348,4 @@ def test_evaluate(data_source, data_order, test):
 with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 # Run on test data.
-test_evaluate(corpus.valid, val_batches, test=True)
+test_evaluate(corpus.train, train_batches, test=True)

@@ -246,4 +246,4 @@ def test_evaluate(data_source, data_order, test):
 with open(model_save_path+"best_model.pth", 'rb') as f:
     model = torch.load(f)
 # Run on test data.
-test_evaluate(corpus.train, train_batches, test=True)
+test_evaluate(corpus.test, test_batches, test=True)

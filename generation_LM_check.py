@@ -13,8 +13,6 @@ from batchify_pad import batchify
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 from models.joint_model import Seq2SeqModel
 from utils.plot_utils import plot
-from models.ConditionedLM import ConditionedLM
-from main_LM_check import LModel
 from torch.autograd import Variable
 
 ###############################################################################

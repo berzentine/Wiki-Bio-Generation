@@ -11,7 +11,6 @@ import random
 from batchify_pad import batchify
 from models.joint_model import Seq2SeqModel
 from utils.plot_utils import plot
-from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
 
 ###############################################################################

@@ -12,7 +12,6 @@ import random
 from batchify_pad import batchify
 from models.joint_model import Seq2SeqModel
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-from models.ConditionedLM import ConditionedLM
 from torch.autograd import Variable
 
 ###############################################################################

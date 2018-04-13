@@ -251,6 +251,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         start_symbol = start_symbol.cuda()
     curr_input = model.sent_lookup(start_symbol) # TODO: change here to look and handle batches
     # print curr_input.shape()
+    encoder_hidden = (encoder_hidden[0].view(1, encoder_hidden[0].size(1), encoder_hidden[0].size(0)*encoder_hidden[0].size(2)), encoder_hidden[1].view(1, encoder_hidden[1].size(1), encoder_hidden[1].size(0)*encoder_hidden[1].size(2)))
     prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
     attention_matrix = []
     for i in range(max_length):

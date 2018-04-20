@@ -118,3 +118,16 @@ def batchify(data, batchsize, verbose, data_ununk): #(sent, field, value)
         value_length.append(temp_table_value_actual_length)
     return value, value_length, field, field_length, ppos, ppos_length, pneg, pneg_length, sent, sent_length, sent_ununk, field_ununk, \
     value_ununk, sent_mask, value_mask
+
+
+def get_batch_alignments(value, alignments):
+    batch_align = []
+    for batch in range(0, value.size(0)):
+        data = []
+        for step in range(0, value.size(1)):
+            word = value[batch,step]
+            align_t = torch.FloatTensor(alignments[word])
+            data.append(align_t)
+        batch_align.append(torch.stack(data, dim=0))
+    batch_align = torch.stack(batch_align, dim=0)
+    return batch_align

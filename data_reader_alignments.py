@@ -1,5 +1,6 @@
 import os
 import torch
+import pickle
 
 
 
@@ -29,7 +30,7 @@ class Data(object):
 
 
 class Corpus(object):
-    def __init__(self, path, vocab_path, alignment_path, top_k, limit, verbose): # top_k is the number of sentences we would be generating
+    def __init__(self, path, vocab_path, alignment_path, use_pickle, top_k, limit, verbose): # top_k is the number of sentences we would be generating
         self.field_vocab = Dictionary()
         self.word_vocab = Dictionary()
         self.pos_vocab = Dictionary()
@@ -76,7 +77,7 @@ class Corpus(object):
                           ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
-        self.populate_word_alignments(alignment_path)
+        self.populate_word_alignments(alignment_path, use_pickle)
         self.train_value, self.train_field, \
         self.train_ppos, self.train_pneg, \
         self.train_sent = self.new_populate_stores(path, self.data_path[0], top_k, limit, verbose)
@@ -108,36 +109,57 @@ class Corpus(object):
                      "sent": self.test_sent, "sent_len": self.test_sent_len}
 
 
-    def populate_word_alignments(self, alignment_path):
+    def populate_word_alignments(self, alignment_path, use_pickle=False):
+        if use_pickle:
+            with open(os.path.join(alignment_path, "alignments.pickle"), "w") as fp:
+                self.alignments = pickle.load(fp)
+            return
         file = open(os.path.join(alignment_path, "alignments.txt"), "r")
+        align_dict = {}
         unk_id = self.word_vocab.word2idx["UNK"]
         sos_id = self.word_vocab.word2idx["<sos>"]
         eos_id = self.word_vocab.word2idx["<eos>"]
         pad_id = self.word_vocab.word2idx["<pad>"]
         for line in file:
-            items = line.split('\t')
+            items = line.split()
             try:
                 if items[0] in self.word_vocab.word2idx and items[1] in self.word_vocab.word2idx:
                     item_0 = self.word_vocab.word2idx[items[0]]
                     item_1 = self.word_vocab.word2idx[items[1]]
-                    if item_0 in self.alignments :
-                        self.alignments[item_0][item_1] = float(items[-1])
+                    if item_0 in align_dict :
+                        align_dict[item_0][item_1] = float(items[-1])
                     else:
-                        self.alignments[item_0] = {item_1: float(items[-1])}
+                        align_dict[item_0] = {item_1: float(items[-1])}
             except:
                 continue
-        for key in self.alignments.keys():
+        for key in align_dict.keys():
+            self.alignments[key] = [0]*len(self.word_vocab.word2idx.keys())
             sum = 0
-            for item in self.alignments[key].keys():
-                sum += self.alignments[key][item]
+            num_items = len(align_dict[key].keys())
+            # for item in align_dict[key].keys():
+            #     sum += align_dict[key][item]
+            for word in self.word_vocab.word2idx.keys():
+                word = self.word_vocab.word2idx[word]
+                if word in align_dict[key]:
+                    self.alignments[key][word] = align_dict[key][word]
+                    sum += align_dict[key][word]
+                else:
+                    self.alignments[key][word] = float('-inf')
             self.alignments[key][unk_id] = (0 - sum)/4
             self.alignments[key][sos_id] = (0 - sum)/4
             self.alignments[key][eos_id] = (0 - sum)/4
             self.alignments[key][pad_id] = (0 - sum)/4
 
-        for word in self.word_vocab.word2idx.keys():
+        self.alignments[unk_id] = [0]*len(self.word_vocab.word2idx.keys())
+        for word in range(len(self.word_vocab.idx2word)):
             self.alignments[unk_id][word] = float("-inf")
         self.alignments[unk_id][unk_id] = 0
+        self.alignments[pad_id] = [0]*len(self.word_vocab.word2idx.keys())
+        for word in range(len(self.word_vocab.idx2word)):
+            self.alignments[pad_id][word] = float("-inf")
+        self.alignments[pad_id][pad_id] = 0
+        with open(os.path.join(alignment_path, "alignments.pickle"), "w") as fp:
+            pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     def populate_vocab(self, vocab_path, verbose):

@@ -193,7 +193,7 @@ class Corpus(object):
 
     def populate_word_alignments(self, alignment_path, use_pickle=False):
         if use_pickle:
-            with open(os.path.join(alignment_path, "alignments.pickle"), "w") as fp:
+            with open(os.path.join(alignment_path, "alignments.pickle"), "rb") as fp:
                 self.alignments = pickle.load(fp)
             return
         file = open(os.path.join(alignment_path, "alignments.txt"), "r")
@@ -240,7 +240,7 @@ class Corpus(object):
         for word in range(len(self.word_vocab.idx2word)):
             self.alignments[pad_id][word] = float("-inf")
         self.alignments[pad_id][pad_id] = 0
-        with open(os.path.join(alignment_path, "alignments.pickle"), "w") as fp:
+        with open(os.path.join(alignment_path, "alignments.pickle"), "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):

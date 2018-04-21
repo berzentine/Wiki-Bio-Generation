@@ -93,14 +93,16 @@ class Corpus(object):
         self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab, \
                       "word_ununk_vocab": self.word_ununk_vocab, "field_ununk_vocab": self.field_ununk_vocab}
         self.verbose = verbose
+        self.alignments = {}
 
         self.data_path = [['train/train.sent', 'train/train.nb', 'train/train.box'],
                           ['test/test.sent', 'test/test.nb',  'test/test.box'],
                           ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
+        print(self.word_vocab.idx2word[10429])
         self.populate_word_alignments(alignment_path, use_pickle)
-
+        print(self.alignments[10429])
         self.train_value, self.train_field, \
         self.train_ppos, self.train_pneg, \
         self.train_sent, self.train_ununk_sent, self.train_ununk_field, \
@@ -205,13 +207,13 @@ class Corpus(object):
         for line in file:
             items = line.split()
             try:
-                if items[0] in self.word_vocab.word2idx and items[1] in self.word_vocab.word2idx:
+                if items[0] in self.word_vocab.word2idx:
                     item_0 = self.word_vocab.word2idx[items[0]]
-                    item_1 = self.word_vocab.word2idx[items[1]]
-                    if item_0 in align_dict :
+                    align_dict[item_0] = {}
+                    if items[1] in self.word_vocab.word2idx:
+                        item_1 = self.word_vocab.word2idx[items[1]]
+                        if item_0 == 4185: print("found here")
                         align_dict[item_0][item_1] = float(items[-1])
-                    else:
-                        align_dict[item_0] = {item_1: float(items[-1])}
             except:
                 continue
         for key in align_dict.keys():

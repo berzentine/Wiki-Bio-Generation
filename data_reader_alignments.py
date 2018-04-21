@@ -103,9 +103,9 @@ class Corpus(object):
                           ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
-        print(self.word_vocab.idx2word[10429])
+        #print(self.word_vocab.idx2word[10429])
         self.populate_word_alignments(alignment_path, use_pickle)
-        print(self.alignments[10429])
+        #print(self.alignments[10429])
         self.train_value, self.train_field, \
         self.train_ppos, self.train_pneg, \
         self.train_sent, self.train_ununk_sent, self.train_ununk_field, \

@@ -93,21 +93,21 @@ print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
-corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask = \
+corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask, corpus.train_alignments = \
     batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
-             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
+             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value], corpus.alignments)
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
-corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask = \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask, corpus.test_alignments = \
     batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
-             1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
+             1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value], corpus.alignments)
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len, \
-corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask = \
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask, corpus.valid_alignments = \
     batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
-             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
+             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value], corpus.alignments)
 
 corpus.create_data_dictionaries()
 
@@ -166,7 +166,8 @@ def get_data(data_source, num, evaluation):
     value_len = data_source['value_len'][num]
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
-    alignments = get_batch_alignments(value, corpus.alignments)
+    # alignments = get_batch_alignments(value, corpus.alignments)
+    alignments = data_source['alignments'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:

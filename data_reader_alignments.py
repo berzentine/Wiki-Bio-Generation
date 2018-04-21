@@ -57,6 +57,7 @@ class Corpus(object):
         self.train_ununk_value = []
         self.train_sent_mask = []
         self.train_value_mask = []
+        self.train_alignments = []
 
         self.test_ppos = []
         self.test_ppos_len = []
@@ -73,6 +74,7 @@ class Corpus(object):
         self.test_ununk_value = []
         self.test_sent_mask = []
         self.test_value_mask = []
+        self.test_alignments = []
 
         self.valid_ppos = []
         self.valid_ppos_len = []
@@ -89,6 +91,7 @@ class Corpus(object):
         self.valid_ununk_value = []
         self.valid_sent_mask = []
         self.valid_value_mask = []
+        self.valid_alignments = []
 
         self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab, \
                       "word_ununk_vocab": self.word_ununk_vocab, "field_ununk_vocab": self.field_ununk_vocab}
@@ -127,7 +130,7 @@ class Corpus(object):
                       "sent": self.train_sent, "sent_len": self.train_sent_len,
                       "sent_ununk": self.train_ununk_sent, "field_ununk": self.train_ununk_field,
                       "value_ununk": self.train_ununk_value, "sent_mask": self.train_sent_mask,
-                      "value_mask": self.train_value_mask}
+                      "value_mask": self.train_value_mask, "alignments": self.train_alignments}
         self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
                       "field": self.valid_field, 'field_len': self.valid_field_len,
                       "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
@@ -135,7 +138,7 @@ class Corpus(object):
                       "sent": self.valid_sent, "sent_len": self.valid_sent_len,
                       "sent_ununk": self.valid_ununk_sent, "field_ununk": self.valid_ununk_field,
                       "value_ununk": self.valid_ununk_value, "sent_mask": self.valid_sent_mask,
-                      "value_mask": self.valid_value_mask}
+                      "value_mask": self.valid_value_mask, "alignments": self.valid_alignments}
         self.test = {"value": self.test_value, "value_len": self.test_value_len,
                      "field": self.test_field, 'field_len': self.test_field_len,
                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
@@ -143,7 +146,7 @@ class Corpus(object):
                      "sent": self.test_sent, "sent_len": self.test_sent_len,
                      "sent_ununk": self.test_ununk_sent, "field_ununk": self.test_ununk_field,
                      "value_ununk": self.test_ununk_value, "sent_mask": self.test_sent_mask,
-                     "value_mask": self.test_value_mask}
+                     "value_mask": self.test_value_mask, "alignments": self.test_alignments}
 
 
     def populate_vocab(self, vocab_path, verbose):

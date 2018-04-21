@@ -185,7 +185,7 @@ def get_data(data_source, num, evaluation):
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     value_mask = Variable(value_mask, volatile=evaluation)
-
+    alignments = Variable(alignments)
     field_ununk = Variable(field_ununk, volatile=evaluation)
     value_ununk = Variable(value_ununk, volatile=evaluation)
     sent_ununk = Variable(sent_ununk, volatile=evaluation)

@@ -166,8 +166,8 @@ def get_data(data_source, num, evaluation):
     value_len = data_source['value_len'][num]
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
-    # alignments = get_batch_alignments(value, corpus.alignments)
-    alignments = data_source['alignments'][num]
+    alignments = get_batch_alignments(value, corpus.alignments)
+    # alignments = data_source['alignments'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:

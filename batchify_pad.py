@@ -126,6 +126,7 @@ def batchify(data, batchsize, verbose, data_ununk, text_alignment): #(sent, fiel
         ppos_length.append(temp_table_ppos_actual_length)
         field_length.append(temp_table_field_actual_length)
         value_length.append(temp_table_value_actual_length)
-        alignments.append(get_batch_alignments(val, text_alignment))
+        # alignments.append(get_batch_alignments(val, text_alignment))
+        alignments.append([])
     return value, value_length, field, field_length, ppos, ppos_length, pneg, pneg_length, sent, sent_length, sent_ununk, field_ununk, \
     value_ununk, sent_mask, value_mask, alignments

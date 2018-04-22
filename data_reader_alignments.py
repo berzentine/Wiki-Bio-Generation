@@ -219,23 +219,31 @@ class Corpus(object):
                         align_dict[item_0][item_1] = float(items[-1])
             except:
                 continue
-        for key in align_dict.keys():
+        for key in self.word_vocab.word2idx.keys():
+            key = self.word_vocab.word2idx[key]
             self.alignments[key] = [0]*len(self.word_vocab.word2idx.keys())
-            sum = 0
-            num_items = len(align_dict[key].keys())
-            # for item in align_dict[key].keys():
-            #     sum += align_dict[key][item]
-            for word in self.word_vocab.word2idx.keys():
-                word = self.word_vocab.word2idx[word]
-                if word in align_dict[key]:
-                    self.alignments[key][word] = align_dict[key][word]
-                    sum += align_dict[key][word]
-                else:
-                    self.alignments[key][word] = float('-inf')
-            self.alignments[key][unk_id] = (0 - sum)/4
-            self.alignments[key][sos_id] = (0 - sum)/4
-            self.alignments[key][eos_id] = (0 - sum)/4
-            self.alignments[key][pad_id] = (0 - sum)/4
+            if key in align_dict.keys():
+                sum = 0
+                num_items = len(align_dict[key].keys())
+                # for item in align_dict[key].keys():
+                #     sum += align_dict[key][item]
+                for word in self.word_vocab.word2idx.keys():
+                    word = self.word_vocab.word2idx[word]
+                    if word in align_dict[key]:
+                        self.alignments[key][word] = align_dict[key][word]
+                        sum += align_dict[key][word]
+                    else:
+                        self.alignments[key][word] = float('-inf')
+                self.alignments[key][unk_id] = (0 - sum)/4
+                self.alignments[key][sos_id] = (0 - sum)/4
+                self.alignments[key][eos_id] = (0 - sum)/4
+                self.alignments[key][pad_id] = (0 - sum)/4
+            else:
+                num = len(self.word_vocab.word2idx.keys())
+                for word in self.word_vocab.word2idx.keys():
+                    word = self.word_vocab.word2idx[word]
+                    self.alignments[key][word] = 1/num
+
 
         self.alignments[unk_id] = [0]*len(self.word_vocab.word2idx.keys())
         for word in range(len(self.word_vocab.idx2word)):

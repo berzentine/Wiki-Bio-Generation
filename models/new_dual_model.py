@@ -62,7 +62,7 @@ class Seq2SeqDualModel(nn.Module):
         attn = torch.stack(attn, dim=1) # (32L, 78L, 100L)
         m = nn.Sigmoid()
         lamda = m(self.x)
-        print('lambda', lamda)
+        #print('lambda', lamda)
         #for param in self.parameters():
         #    print param.size()
         #epsilon  = 0.001

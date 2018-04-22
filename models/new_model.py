@@ -52,5 +52,6 @@ class Seq2SeqModelNew(nn.Module):
         sent = self.sent_lookup(sent)
         encoder_hidden = (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, encoder_output)
+        # Need to change here to include prob alignments and learn lambda here 
         decoder_output = self.linear_out(decoder_output)
         return decoder_output, decoder_hidden

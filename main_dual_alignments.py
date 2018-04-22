@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
-import data_reader_replicated as data_reader
+import data_reader_alignments as data_reader
 import random
-from batchify_pad import batchify
+from batchify_pad import batchify, get_batch_alignments
 from models.new_dual_model import Seq2SeqDualModel
 from utils.plot_utils import plot
 from torch.autograd import Variable
@@ -26,6 +26,8 @@ parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
+parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/', help='location of the alignment files')
+parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
 parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
@@ -54,6 +56,8 @@ hidden_size = args.nhid
 batchsize = args.batchsize
 data_path = args.data
 vocab_path = args.vocab
+alignment_path = args.alignments
+use_pickle = args.use_pickle
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
 lr = args.lr
@@ -81,7 +85,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_reader.Corpus(data_path, vocab_path, 1, limit, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, use_pickle, 1, limit, verbose)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)
@@ -89,21 +93,21 @@ print('='*32)
 
 corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
 corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
-corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask = \
+corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask, corpus.train_alignments = \
     batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
-             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value])
+             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value], corpus.alignments)
 
 corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
 corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
-corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask = \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask, corpus.test_alignments = \
     batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
-             1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value])
+             1, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value], corpus.alignments)
 
 corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
 corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len, \
-corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask = \
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask, corpus.valid_alignments = \
     batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
-             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value] )
+             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value], corpus.alignments)
 
 corpus.create_data_dictionaries()
 
@@ -124,12 +128,13 @@ if verbose:
 
     print('='*32)
 #Build Model and move to CUDA
+
 x = Variable(torch.zeros(1), requires_grad=True)
 model = Seq2SeqDualModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
-                     pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
-                     field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
-                     pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
-                     decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda, x=x)
+                         pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
+                         field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
+                         pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
+                         decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda,x=x)
 
 weight_mask = torch.ones(WORD_VOCAB_SIZE)
 if args.cuda:
@@ -163,6 +168,8 @@ def get_data(data_source, num, evaluation):
     value_len = data_source['value_len'][num]
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
+    alignments = get_batch_alignments(value, corpus.alignments)
+    # alignments = data_source['alignments'][num]
     # data = torch.stack(data)
     # target = torch.stack(target)
     if cuda:
@@ -173,19 +180,21 @@ def get_data(data_source, num, evaluation):
         ppos = ppos.cuda()
         pneg = pneg.cuda()
         value_mask = value_mask.cuda()
+        alignments = alignments.cuda()
     sent = Variable(sent, volatile=evaluation)
     field = Variable(field, volatile=evaluation)
     value = Variable(value, volatile=evaluation)
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     value_mask = Variable(value_mask, volatile=evaluation)
-
+    alignments = Variable(alignments)
     field_ununk = Variable(field_ununk, volatile=evaluation)
     value_ununk = Variable(value_ununk, volatile=evaluation)
     sent_ununk = Variable(sent_ununk, volatile=evaluation)
 
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , value_ununk, sent_mask, value_mask
+    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk,\
+           field_ununk , value_ununk, sent_mask, value_mask, alignments
 
 
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
@@ -206,9 +215,9 @@ def train():
         num_batches+=1
         #batch_num = 21
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
-        field_ununk , value_ununk, sent_mask, value_mask  = get_data(corpus.train, batch_num, False)
+        field_ununk , value_ununk, sent_mask, value_mask, alignments  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask)
+        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):

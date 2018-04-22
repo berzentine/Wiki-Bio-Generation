@@ -231,7 +231,7 @@ val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
 
 def generate(value, value_len, field, ppos, pneg, batch_size, \
              train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
-             ununk_dictionary, value_ununk, value_mask, sent):
+             ununk_dictionary, value_ununk, value_mask, sent, align_prob=None, lamda=None, epsilon=None):
     # input_d = model.sent_lookup(value)
     # input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
     # encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
@@ -257,12 +257,26 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
     for i in range(max_length):
         # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
         decoder_output, prev_hidden, attn_vector = model.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
+        # Need to change here to include prob alignments and use learned lambda here
+        # TODO: Need to change here to incorporate alignment prob
         decoder_output = model.linear_out(decoder_output)
+
+        attn = torch.stack(attn, dim=1) # (32L, 78L, 100L)
+        # TODO: change hardcoding here
+        m = nn.Sigmoid()
+        lamda = m(model.x)
+        epsilon  = 0.001
+        #dim(align_prob) = batch X vocab X table length
+        align_prob = Variable(torch.rand(attn.size(0), decoder_output.size(2), attn.size(2)))   # (32L, 20003L, 100L)
+        p_lex = torch.bmm(attn, align_prob.transpose(1,2)) # do attn . align_prob' -> (32L, 78L, 20003L) same dimensions as decoder output
+        p_mod = decoder_output
+        p_bias = lamda*p_lex + (1-lamda)*p_mod + epsilon # (32L, 78L, 20003L)
+        decoder_output = p_bias
+
+
         max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
         curr_input = model.sent_lookup(max_idx).unsqueeze(0)
-        # TODO: Issue here
-        # print curr_input.shape()
-        # exit(0)
+
         attention_matrix.append(attn_vector[0][0,:value_len[0]].data.cpu().numpy())
         if dictionary.idx2word[int(max_idx)] == '<eos>':
             break
@@ -307,7 +321,7 @@ def test_evaluate(data_source, data_order, test):
                         #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
                     gen_seq, unk_rep_seq, attn_matrix = generate(value, value_len, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
-                                                    corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, value_mask, actual_sent)                    
+                                                    corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, value_mask, actual_sent)
                     for u in unk_rep_seq:
                         up.write(u+" ")
                     for r in ref_seq:

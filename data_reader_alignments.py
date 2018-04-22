@@ -1,6 +1,7 @@
 import os
 import torch
 import re
+import pickle
 
 
 
@@ -30,7 +31,7 @@ class Data(object):
 
 
 class Corpus(object):
-    def __init__(self, path, vocab_path, top_k, limit, verbose): # top_k is the number of sentences we would be generating
+    def __init__(self, path, vocab_path, alignment_path, use_pickle, top_k, limit, verbose): # top_k is the number of sentences we would be generating
         self.field_vocab = Dictionary()
         self.word_vocab = Dictionary()
 
@@ -56,6 +57,7 @@ class Corpus(object):
         self.train_ununk_value = []
         self.train_sent_mask = []
         self.train_value_mask = []
+        self.train_alignments = []
 
         self.test_ppos = []
         self.test_ppos_len = []
@@ -72,6 +74,7 @@ class Corpus(object):
         self.test_ununk_value = []
         self.test_sent_mask = []
         self.test_value_mask = []
+        self.test_alignments = []
 
         self.valid_ppos = []
         self.valid_ppos_len = []
@@ -88,29 +91,34 @@ class Corpus(object):
         self.valid_ununk_value = []
         self.valid_sent_mask = []
         self.valid_value_mask = []
+        self.valid_alignments = []
 
         self.vocab = {"word_vocab": self.word_vocab, "field_vocab": self.field_vocab, "pos_vocab": self.pos_vocab, \
-        "word_ununk_vocab": self.word_ununk_vocab, "field_ununk_vocab": self.field_ununk_vocab}
+                      "word_ununk_vocab": self.word_ununk_vocab, "field_ununk_vocab": self.field_ununk_vocab}
         self.verbose = verbose
+        self.alignments = {}
 
         self.data_path = [['train/train.sent', 'train/train.nb', 'train/train.box'],
-        ['test/test.sent', 'test/test.nb',  'test/test.box'],
-        ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
+                          ['test/test.sent', 'test/test.nb',  'test/test.box'],
+                          ['valid/valid.sent', 'valid/valid.nb', 'valid/valid.box']]
 
         self.populate_vocab(vocab_path, verbose)
-        self.train_value, self.train_field,\
-        self.train_ppos, self.train_pneg,\
-        self.train_sent, self.train_ununk_sent, self.train_ununk_field,  \
+        #print(self.word_vocab.idx2word[10429])
+        self.populate_word_alignments(alignment_path, use_pickle)
+        #print(self.alignments[10429])
+        self.train_value, self.train_field, \
+        self.train_ppos, self.train_pneg, \
+        self.train_sent, self.train_ununk_sent, self.train_ununk_field, \
         self.train_ununk_value  = self.new_populate_stores(path, self.data_path[0], top_k, limit, verbose)
 
         self.test_value, self.test_field, \
         self.test_ppos, self.test_pneg, \
-        self.test_sent, self.test_ununk_sent, self.test_ununk_field,  \
+        self.test_sent, self.test_ununk_sent, self.test_ununk_field, \
         self.test_ununk_value = self.new_populate_stores(path, self.data_path[1], top_k, limit, verbose)
 
         self.valid_value, self.valid_field, \
         self.valid_ppos, self.valid_pneg, \
-        self.valid_sent, self.valid_ununk_sent, self.valid_ununk_field,  \
+        self.valid_sent, self.valid_ununk_sent, self.valid_ununk_field, \
         self.valid_ununk_value = self.new_populate_stores(path, self.data_path[2], top_k, limit, verbose)
 
 
@@ -120,9 +128,9 @@ class Corpus(object):
                       "ppos": self.train_ppos, "ppos_len": self.train_ppos_len,
                       "pneg": self.train_pneg, "pneg_len": self.train_pneg_len,
                       "sent": self.train_sent, "sent_len": self.train_sent_len,
-                       "sent_ununk": self.train_ununk_sent, "field_ununk": self.train_ununk_field,
+                      "sent_ununk": self.train_ununk_sent, "field_ununk": self.train_ununk_field,
                       "value_ununk": self.train_ununk_value, "sent_mask": self.train_sent_mask,
-                      "value_mask": self.train_value_mask}
+                      "value_mask": self.train_value_mask, "alignments": self.train_alignments}
         self.valid = {"value": self.valid_value, "value_len": self.valid_value_len,
                       "field": self.valid_field, 'field_len': self.valid_field_len,
                       "ppos": self.valid_ppos, "ppos_len": self.valid_ppos_len,
@@ -130,7 +138,7 @@ class Corpus(object):
                       "sent": self.valid_sent, "sent_len": self.valid_sent_len,
                       "sent_ununk": self.valid_ununk_sent, "field_ununk": self.valid_ununk_field,
                       "value_ununk": self.valid_ununk_value, "sent_mask": self.valid_sent_mask,
-                      "value_mask": self.valid_value_mask}
+                      "value_mask": self.valid_value_mask, "alignments": self.valid_alignments}
         self.test = {"value": self.test_value, "value_len": self.test_value_len,
                      "field": self.test_field, 'field_len': self.test_field_len,
                      "ppos": self.test_ppos, "ppos_len": self.test_ppos_len,
@@ -138,7 +146,7 @@ class Corpus(object):
                      "sent": self.test_sent, "sent_len": self.test_sent_len,
                      "sent_ununk": self.test_ununk_sent, "field_ununk": self.test_ununk_field,
                      "value_ununk": self.test_ununk_value, "sent_mask": self.test_sent_mask,
-                     "value_mask": self.test_value_mask}
+                     "value_mask": self.test_value_mask, "alignments": self.test_alignments}
 
 
     def populate_vocab(self, vocab_path, verbose):
@@ -188,6 +196,57 @@ class Corpus(object):
         temp_pneg+= current[::-1]
         return temp_pneg
 
+    def populate_word_alignments(self, alignment_path, use_pickle=False):
+        if use_pickle:
+            with open(os.path.join(alignment_path, "alignments.pickle"), "rb") as fp:
+                self.alignments = pickle.load(fp)
+            return
+        file = open(os.path.join(alignment_path, "alignments.txt"), "r")
+        align_dict = {}
+        unk_id = self.word_vocab.word2idx["UNK"]
+        sos_id = self.word_vocab.word2idx["<sos>"]
+        eos_id = self.word_vocab.word2idx["<eos>"]
+        pad_id = self.word_vocab.word2idx["<pad>"]
+        for line in file:
+            items = line.split()
+            try:
+                if items[0] in self.word_vocab.word2idx:
+                    item_0 = self.word_vocab.word2idx[items[0]]
+                    align_dict[item_0] = {}
+                    if items[1] in self.word_vocab.word2idx:
+                        item_1 = self.word_vocab.word2idx[items[1]]
+                        if item_0 == 4185: print("found here")
+                        align_dict[item_0][item_1] = float(items[-1])
+            except:
+                continue
+        for key in align_dict.keys():
+            self.alignments[key] = [0]*len(self.word_vocab.word2idx.keys())
+            sum = 0
+            num_items = len(align_dict[key].keys())
+            # for item in align_dict[key].keys():
+            #     sum += align_dict[key][item]
+            for word in self.word_vocab.word2idx.keys():
+                word = self.word_vocab.word2idx[word]
+                if word in align_dict[key]:
+                    self.alignments[key][word] = align_dict[key][word]
+                    sum += align_dict[key][word]
+                else:
+                    self.alignments[key][word] = float('-inf')
+            self.alignments[key][unk_id] = (0 - sum)/4
+            self.alignments[key][sos_id] = (0 - sum)/4
+            self.alignments[key][eos_id] = (0 - sum)/4
+            self.alignments[key][pad_id] = (0 - sum)/4
+
+        self.alignments[unk_id] = [0]*len(self.word_vocab.word2idx.keys())
+        for word in range(len(self.word_vocab.idx2word)):
+            self.alignments[unk_id][word] = float("-inf")
+        self.alignments[unk_id][unk_id] = 0
+        self.alignments[pad_id] = [0]*len(self.word_vocab.word2idx.keys())
+        for word in range(len(self.word_vocab.idx2word)):
+            self.alignments[pad_id][word] = float("-inf")
+        self.alignments[pad_id][pad_id] = 0
+        with open(os.path.join(alignment_path, "alignments.pickle"), "wb") as fp:
+            pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):
         # handle the sentences # handle the nb # tokenize the appendings
@@ -230,7 +289,7 @@ class Corpus(object):
         count = 0
         for line in file:
             if count == size:
-              break
+                break
             count += 1
             temp_ppos = []
             temp_pneg = []
@@ -247,7 +306,7 @@ class Corpus(object):
                 field_value = l.split(':')[1] # word
                 if '<none>' in field_value or field_value.strip()=='' or word.strip()=='':
                     continue
-                
+
                 word = l.split(':')[0].rsplit('_',1)[0] # field_name
                 pos = l.split(':')[0].rsplit('_',1)[1]
 

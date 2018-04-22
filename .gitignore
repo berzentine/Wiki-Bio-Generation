@@ -1,6 +1,7 @@
 data/Wiki-Data/wikipedia-biography-dataset/
 data/Wiki-Data/wikipedia-biography-dataset-debug/
 data/Wiki-Data/wikipedia-biography-dataset-dummy/
+data/*
 saved_models/
 *.pyc
 .DS_Store

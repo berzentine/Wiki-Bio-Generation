@@ -1,6 +1,7 @@
 import os
 import torch
 import re
+import math
 import pickle
 
 
@@ -196,7 +197,7 @@ class Corpus(object):
         temp_pneg+= current[::-1]
         return temp_pneg
 
-    def populate_word_alignments(self, alignment_path, use_pickle=False):
+    def populate_word_alignments(self, alignment_path, use_pickle=False, epsilon=0.001):
         if use_pickle:
             with open(os.path.join(alignment_path, "alignments.pickle"), "rb") as fp:
                 self.alignments = pickle.load(fp)
@@ -230,29 +231,30 @@ class Corpus(object):
                 for word in self.word_vocab.word2idx.keys():
                     word = self.word_vocab.word2idx[word]
                     if word in align_dict[key]:
-                        self.alignments[key][word] = align_dict[key][word]
-                        sum += align_dict[key][word]
+                        self.alignments[key][word] = math.log(math.exp(align_dict[key][word]) + epsilon)
+                        sum += math.exp(align_dict[key][word])
                     else:
-                        self.alignments[key][word] = float('-inf')
-                self.alignments[key][unk_id] = (0 - sum)/4
-                self.alignments[key][sos_id] = (0 - sum)/4
-                self.alignments[key][eos_id] = (0 - sum)/4
-                self.alignments[key][pad_id] = (0 - sum)/4
+                        self.alignments[key][word] = math.log(0 + epsilon)
+                        sum += 0
+                self.alignments[key][unk_id] = math.log((1 - sum)/4 + epsilon)
+                self.alignments[key][sos_id] = math.log((1 - sum)/4 + epsilon)
+                self.alignments[key][eos_id] = math.log((1 - sum)/4 + epsilon)
+                self.alignments[key][pad_id] = math.log((1 - sum)/4 + epsilon)
             else:
                 num = len(self.word_vocab.word2idx.keys())
                 for word in self.word_vocab.word2idx.keys():
                     word = self.word_vocab.word2idx[word]
-                    self.alignments[key][word] = 1/num
+                    self.alignments[key][word] = math.log(0 + epsilon)
 
 
         self.alignments[unk_id] = [0]*len(self.word_vocab.word2idx.keys())
         for word in range(len(self.word_vocab.idx2word)):
-            self.alignments[unk_id][word] = float("-inf")
-        self.alignments[unk_id][unk_id] = 0
+            self.alignments[unk_id][word] = math.log(0 + epsilon)
+        self.alignments[unk_id][unk_id] = math.log(1 + epsilon)
         self.alignments[pad_id] = [0]*len(self.word_vocab.word2idx.keys())
         for word in range(len(self.word_vocab.idx2word)):
-            self.alignments[pad_id][word] = float("-inf")
-        self.alignments[pad_id][pad_id] = 0
+            self.alignments[pad_id][word] = math.log(0 + epsilon)
+        self.alignments[pad_id][pad_id] = math.log(1 + epsilon)
         with open(os.path.join(alignment_path, "alignments.pickle"), "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 

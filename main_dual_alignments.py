@@ -145,7 +145,7 @@ if args.cuda:
 #Build criterion and optimizer
 
 weight_mask[0] = 0
-criterion = nn.CrossEntropyLoss(ignore_index=0, weight=weight_mask, size_average=True)
+criterion = nn.NLLLoss(ignore_index=0, weight=weight_mask, size_average=True)
 #criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)

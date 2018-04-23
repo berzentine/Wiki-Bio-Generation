@@ -56,8 +56,8 @@ class Seq2SeqDualModel(nn.Module):
         encoder_hidden = (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         decoder_output = self.linear_out(decoder_output)
-
-        decoder_output = nn.LogSoftmax(decoder_output, dim=2)
+        logsoftmax = nn.LogSoftmax(dim=2)
+        decoder_output = logsoftmax(decoder_output)
         #print(len(attn), decoder_output.size(), attn[0].size()) # (78, (32L, 78L, 20003L), (32L, 100L))
 
         # stack the attention vector in the second dimension -> basically convert the list of 78 attn vectors to (32, 78,100 ) single matrix

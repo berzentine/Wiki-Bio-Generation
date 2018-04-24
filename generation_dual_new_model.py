@@ -199,9 +199,7 @@ def get_data(data_source, num, evaluation):
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
 
-    #TODO: Fix here
-    alignments = None
-    #alignments = get_batch_alignments(value, corpus.alignments)
+    alignments = get_batch_alignments(value, corpus.alignments)
 
     # alignments = data_source['alignments'][num]
     # data = torch.stack(data)
@@ -214,8 +212,8 @@ def get_data(data_source, num, evaluation):
         ppos = ppos.cuda()
         pneg = pneg.cuda()
         value_mask = value_mask.cuda()
-        #TODO: Fix here
-        #alignments = alignments.cuda()
+        alignments = alignments.cuda()
+        
     sent = Variable(sent, volatile=evaluation)
     field = Variable(field, volatile=evaluation)
     value = Variable(value, volatile=evaluation)
@@ -239,7 +237,7 @@ val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
 
 def generate(value, value_len, field, ppos, pneg, batch_size, \
              train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
-             ununk_dictionary, value_ununk, value_mask, sent, alignments):
+             ununk_dictionary, value_ununk, value_mask, sent, align_prob):
     # input_d = model.sent_lookup(value)
     # input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
     # encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
@@ -279,18 +277,21 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         attn_vector = torch.stack(attn_vector, dim=1) # ->(32L, 1L, 100L)
         m = nn.Sigmoid()
         lamda = m(model.x)
+
         #dim(align_prob) = batch X vocab X table length
-        align_prob = Variable(torch.rand(attn_vector.size(0), decoder_output.size(2), attn_vector.size(2)))   # (32L, 20003L, 100L)
+        #align_prob = Variable(torch.rand(attn_vector.size(0), decoder_output.size(2), attn_vector.size(2)))   # (32L, 20003L, 100L)
         if cuda:
             align_prob = align_prob.cuda()
         #print(align_prob.size(), attn_vector.size()) # -> ((batchsize, vocab, tab_length), (batchsize, seq_legth, tab_length)) = ((32L, 20003L, 100L), (32L, 1L, 100L))
-        p_lex = torch.bmm(attn_vector, align_prob.transpose(1,2)) # do attn . align_prob' -> (32L, 1L, 20003L) same dimensions as decoder output
+        p_lex = torch.bmm(attn_vector, align_prob) # do attn . align_prob' -> (32L, 1L, 20003L) same dimensions as decoder output
         p_mod = decoder_output
-        p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L)
+        p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L
+        out_softmax = nn.LogSoftmax(dim=2)
+        p_bias = out_softmax(p_bias)
         decoder_output = p_bias # -> (batch, 1L, vocab)
         #print gen_seq
         max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
-        curr_input=  model.sent_lookup(max_idx) #-> (batch, 1L, embed size)
+        curr_input =  model.sent_lookup(max_idx) #-> (batch, 1L, embed size)
 
         #attention_matrix = None
         #attention_matrix.append(attn_vector[0][0,:value_len[0]].data.cpu().numpy())

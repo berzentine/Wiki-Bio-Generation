@@ -9,7 +9,7 @@ import torch.optim as optim
 import data_reader_alignments as data_reader
 import random
 from batchify_pad import batchify, get_batch_alignments
-from models.new_dual_model import Seq2SeqDualModel
+from models.dual_alignments_timestep import Seq2SeqDualModel
 from utils.plot_utils import plot
 from torch.autograd import Variable
 
@@ -168,6 +168,7 @@ def get_data(data_source, num, evaluation):
     value_len = data_source['value_len'][num]
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
+    #alignments = None
     alignments = get_batch_alignments(value, corpus.alignments)
     # alignments = data_source['alignments'][num]
     # data = torch.stack(data)

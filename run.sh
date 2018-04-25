@@ -1,2 +1,8 @@
 #!/bin/sh
-CUDA_AVAILABLE_DEVICES=0 python main_dual_alignments --epochs 500 --model_save_path dual_alignment --plot_save_path dual_alignment
+CUDA_AVAILABLE_DEVICES=0 python main_dual_alignments.py \
+--epochs 500 \
+--model_save_path dual_alignment \
+--plot_save_path dual_alignment \
+--data ./data/Wiki-Data/wikipedia-biography-dataset-debug/ \
+--limit 0.005 \
+--alignments ./data/Wiki-Data/alignments-debug/

@@ -57,7 +57,7 @@ class LSTMDualAttention(nn.Module):
             hidden, att, context_vec = recurrence(input[i], prev_hidden)
             output.append(hidden[0])
             attn.append(att)
-            lam = self.time_weight_lin2(self.sig(self.time_weight_lin1(torch.cat((prev_hidden[0], context_vec), 1))))
+            lam = self.sig(self.time_weight_lin2(self.sig(self.time_weight_lin1(torch.cat((prev_hidden[0], context_vec), 1)))))
             prev_hidden = hidden
             lamda.append(lam)
         output = torch.cat(output, 0).view(input.size(0), *output[0].size())

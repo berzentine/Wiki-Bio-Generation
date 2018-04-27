@@ -221,9 +221,8 @@ class Corpus(object):
                         align_dict[item_0][item_1] = float(items[-1])
             except:
                 continue
-        # for key in self.word_vocab.word2idx.keys():
-        for key in align_dict.keys():
-            # key = self.word_vocab.word2idx[key]
+        for key in self.word_vocab.word2idx.keys():
+            key = self.word_vocab.word2idx[key]
             self.alignments[key] = [0]*len(self.word_vocab.word2idx.keys())
             if key in align_dict.keys():
                 sum = 0

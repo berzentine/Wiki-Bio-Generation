@@ -285,6 +285,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         p_lex = torch.bmm(attn_vector, align_prob) # do attn . align_prob' -> (32L, 1L, 20003L) same dimensions as decoder output
         p_mod = decoder_output
         p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L
+        print(lamda)
         out_softmax = nn.LogSoftmax(dim=2)
         p_bias = out_softmax(p_bias)
         decoder_output = p_bias # -> (batch, 1L, vocab)

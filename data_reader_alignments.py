@@ -213,15 +213,17 @@ class Corpus(object):
             try:
                 if items[0] in self.word_vocab.word2idx:
                     item_0 = self.word_vocab.word2idx[items[0]]
-                    align_dict[item_0] = {}
+                    if item_0 not in align_dict:
+                        align_dict[item_0] = {}
                     if items[1] in self.word_vocab.word2idx:
                         item_1 = self.word_vocab.word2idx[items[1]]
                         if item_0 == 4185: print("found here")
                         align_dict[item_0][item_1] = float(items[-1])
             except:
                 continue
-        for key in self.word_vocab.word2idx.keys():
-            key = self.word_vocab.word2idx[key]
+        # for key in self.word_vocab.word2idx.keys():
+        for key in align_dict.keys():
+            # key = self.word_vocab.word2idx[key]
             self.alignments[key] = [0]*len(self.word_vocab.word2idx.keys())
             if key in align_dict.keys():
                 sum = 0
@@ -231,30 +233,30 @@ class Corpus(object):
                 for word in self.word_vocab.word2idx.keys():
                     word = self.word_vocab.word2idx[word]
                     if word in align_dict[key]:
-                        self.alignments[key][word] = math.log(math.exp(align_dict[key][word]) + epsilon)
+                        self.alignments[key][word] = math.exp(align_dict[key][word]) + epsilon
                         sum += math.exp(align_dict[key][word])
                     else:
-                        self.alignments[key][word] = math.log(0 + epsilon)
+                        self.alignments[key][word] = 0 + epsilon
                         sum += 0
-                self.alignments[key][unk_id] = math.log((1 - sum)/4 + epsilon)
-                self.alignments[key][sos_id] = math.log((1 - sum)/4 + epsilon)
-                self.alignments[key][eos_id] = math.log((1 - sum)/4 + epsilon)
-                self.alignments[key][pad_id] = math.log((1 - sum)/4 + epsilon)
+                self.alignments[key][unk_id] = (1 - sum)/4 + epsilon
+                self.alignments[key][sos_id] = (1 - sum)/4 + epsilon
+                self.alignments[key][eos_id] = (1 - sum)/4 + epsilon
+                self.alignments[key][pad_id] = (1 - sum)/4 + epsilon
             else:
                 num = len(self.word_vocab.word2idx.keys())
                 for word in self.word_vocab.word2idx.keys():
                     word = self.word_vocab.word2idx[word]
-                    self.alignments[key][word] = math.log(0 + epsilon)
+                    self.alignments[key][word] = 0 + epsilon
 
 
         self.alignments[unk_id] = [0]*len(self.word_vocab.word2idx.keys())
         for word in range(len(self.word_vocab.idx2word)):
-            self.alignments[unk_id][word] = math.log(0 + epsilon)
-        self.alignments[unk_id][unk_id] = math.log(1 + epsilon)
+            self.alignments[unk_id][word] = 0 + epsilon
+        self.alignments[unk_id][unk_id] = 1 + epsilon
         self.alignments[pad_id] = [0]*len(self.word_vocab.word2idx.keys())
         for word in range(len(self.word_vocab.idx2word)):
-            self.alignments[pad_id][word] = math.log(0 + epsilon)
-        self.alignments[pad_id][pad_id] = math.log(1 + epsilon)
+            self.alignments[pad_id][word] = 0 + epsilon
+        self.alignments[pad_id][pad_id] = 1 + epsilon
         with open(os.path.join(alignment_path, "alignments.pickle"), "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 

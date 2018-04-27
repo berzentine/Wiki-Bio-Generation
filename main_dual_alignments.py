@@ -333,14 +333,14 @@ try:
                                          val_loss, math.exp(val_loss)))
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
-        #if not best_val_loss or val_loss < best_val_loss:
-        if not best_train_loss or tloss < best_train_loss:
+        if not best_val_loss or val_loss < best_val_loss:
+        #if not best_train_loss or tloss < best_train_loss:
             print("Saving best model")
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
             best_train_loss = tloss
 
-            #best_val_loss = val_loss
+            best_val_loss = val_loss
             #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             #    lr /= 2

@@ -9,7 +9,7 @@ import torch.optim as optim
 import data_reader_alignments as data_reader
 import random
 from batchify_pad import batchify, get_batch_alignments
-from models.dual_alignments import Seq2SeqDualModel
+from models.dual_alignments_timestep import Seq2SeqDualModel
 from utils.plot_utils import plot
 from torch.autograd import Variable
 

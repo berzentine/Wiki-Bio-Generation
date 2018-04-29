@@ -359,15 +359,17 @@ def test_evaluate(data_source, data_order, test):
                         for u in unk_rep_seq[b]:
                             if u=='<eos>':
                                 break
-                            up.write(u+" ")
+                            up.write(str(k)+" "+u+" ")
+                        plot_attention(unk_rep_seq[b], [corpus.word_vocab.idx2word[int(x)] for x in value[b]], attn_matrix[b], file_name="./attn_matrices/"+str(k)+".png")
+                        k+=1
                         for r in ref_seq[b]:
                             if r=='<eos>':
                                 break
-                            rp.write(r+" ")
+                            rp.write(str(k)+" "+r+" ")
                         for g in gen_seq[b]:
                             if g=='<eos>':
                                 break
-                            gp.write(g+" ")
+                            gp.write(str(k)+" "+g+" ")
                         #wp.write("DOCID: "+str(index))
                         up.write("\n\n")
                         rp.write("\n\n")
@@ -379,8 +381,9 @@ def test_evaluate(data_source, data_order, test):
                     #print([corpus.word_vocab.idx2word[int(x)] for x in value[0]])
                     #print(ref_seq)
                     #print([corpus.word_vocab.idx2word[int(x)] for x in value_ununk[0]])
-                    #plot_attention(unk_rep_seq, [corpus.word_vocab.idx2word[int(x)] for x in value[0]], attn_matrix, file_name="./attn_matrices/"+str(k)+".png")
-                    k+=1
+                    
+                    # plot_attention(unk_rep_seq, [corpus.word_vocab.idx2word[int(x)] for x in value[0]], attn_matrix, file_name="./attn_matrices/"+str(k)+".png")
+                    # k+=1
                     #exit(0)
     import os
     os.system("echo \"************ Python scores ************\"")

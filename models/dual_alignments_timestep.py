@@ -70,6 +70,7 @@ class Seq2SeqDualModel(nn.Module):
         if self.cuda_var:
             align_prob = align_prob.cuda()
         p_lex = torch.bmm(attn, align_prob) # do attn . align_prob' -> (32L, 78L, 20003L) same dimensions as decoder output
+        p_lex - logsoftmax(p_lex)
         p_mod = decoder_output
         p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L)
         out_softmax = nn.LogSoftmax(dim=2)

@@ -1,21 +1,22 @@
 # Script for: a*edit_distace + b*phrase_alignments = c
-w_A = 0.5
-w_B = 0.5
-path_A = 'phrase_alignments.txt' # source | target | align_prob
-path_B = 'levenstein_alignments.txt'  # source | target | align_prob
-path_C = 'combined_alignments.txt'  # source | target | A | B | align_prob
+w_A = 0.3
+w_B = 0.7
+path_A = 'alignments/phrase_alignments.txt' # source | target | align_prob
+path_B = 'alignments/levenstein_ratio_alignments.txt'  # source | target | align_prob
+path_C = 'alignments/combined_alignments_p'+str(w_A)+'_e'+str(w_B)+'.txt'  # source | target | A | B | align_prob
 
 def GenProb(path):
+    prob_dict  = {}
     with open(path, 'r') as af:
         #with open(path_B, 'r') as bf:
         for lines in af:
             source = lines.split()[0]
             target = lines.split()[1]
             prob = lines.split()[-1]
-            if source not in prob_dict_A:
-                prob_dict_A[source] = {}
-            if target not in prob_dict_A[source]:
-                prob_dict_A[source][target] = float(prob)
+            if source not in prob_dict:
+                prob_dict[source] = {}
+            if target not in prob_dict[source]:
+                prob_dict[source][target] = float(prob)
     return prob_dict
 
 def normalize(lst):
@@ -61,6 +62,10 @@ def PrintProb(prob_dict_C, path_C, prob_dict_A, prob_dict_B):
 
 
 prob_dict_A = GenProb(path_A) # get the distribution in dict
+print('Generated distribution A')
 prob_dict_B = GenProb(path_B) # get the distribution in dict
+print('Generated distribution B')
 prob_dict_C = CombineProb(w_A, w_B, prob_dict_A, prob_dict_B) # combine the distribution in dict
+print('Generated distribution C')
 PrintProb(prob_dict_C, path_C, prob_dict_A, prob_dict_B) # Normalize the prob and print in file
+print('Wrote distribution C')

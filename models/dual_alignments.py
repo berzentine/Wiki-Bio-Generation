@@ -25,7 +25,8 @@ class Seq2SeqDualModel(nn.Module):
         self.verbose = verbose
         self.cuda_var = cuda_var
         self.init_weights()
-        self.x = nn.Parameter(torch.zeros(1), requires_grad=True)
+        # self.x = nn.Parameter(torch.zeros(1), requires_grad=True)
+        self.x = nn.Parameter(torch.zeros(sent_vocab_size), requires_grad=True)
 
 
 
@@ -74,7 +75,7 @@ class Seq2SeqDualModel(nn.Module):
         p_lex = torch.bmm(attn, align_prob) # do attn . align_prob' -> (32L, 78L, 20003L) same dimensions as decoder output
         p_mod = decoder_output
         p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L)
-        out_softmax = nn.Softmax(dim=2)
+        out_softmax = nn.LogSoftmax(dim=2)
         p_bias = out_softmax(p_bias)
         return p_bias, decoder_hidden # should return the changed and weighted decoder output and not this output
         # should return decoder_output + LfAi + e

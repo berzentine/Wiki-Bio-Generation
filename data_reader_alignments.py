@@ -199,10 +199,10 @@ class Corpus(object):
 
     def populate_log_word_alignments(self, alignment_path, use_pickle=False, epsilon=0.0001):
         if use_pickle:
-            with open(os.path.join(alignment_path, "log_alignments.pickle"), "rb") as fp:
+            with open(alignment_path, "rb") as fp:
                 self.alignments = pickle.load(fp)
             return
-        file = open(os.path.join(alignment_path, "alignments.txt"), "r")
+        file = open(alignment_path, "r")
         align_dict = {}
         unk_id = self.word_vocab.word2idx["UNK"]
         sos_id = self.word_vocab.word2idx["<sos>"]
@@ -269,15 +269,15 @@ class Corpus(object):
             self.alignments[pad_id][word] = -103.000
         #self.alignments[pad_id][pad_id] = 0 + epsilon
         self.alignments[pad_id][pad_id] = 0
-        with open(os.path.join(alignment_path, "log_alignments.pickle"), "wb") as fp:
+        with open(alignment_path, "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def populate_word_alignments(self, alignment_path, use_pickle=False, epsilon=0.00001):
         if use_pickle:
-            with open(os.path.join(alignment_path, "alignments.pickle"), "rb") as fp:
+            with open(alignment_path, "rb") as fp:
                 self.alignments = pickle.load(fp)
             return
-        file = open(os.path.join(alignment_path, "alignments.txt"), "r")
+        file = open(alignment_path, "r")
         align_dict = {}
         unk_id = self.word_vocab.word2idx["UNK"]
         sos_id = self.word_vocab.word2idx["<sos>"]
@@ -344,7 +344,7 @@ class Corpus(object):
             self.alignments[pad_id][word] = math.log(epsilon)
         #self.alignments[pad_id][pad_id] = 0 + epsilon
         self.alignments[pad_id][pad_id] = math.log(1)
-        with open(os.path.join(alignment_path, "alignments.pickle"), "wb") as fp:
+        with open(alignment_path, "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):

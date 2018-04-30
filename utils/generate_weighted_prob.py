@@ -1,6 +1,6 @@
 # Script for: a*edit_distace + b*phrase_alignments = c
-w_A = 0.3
-w_B = 0.7
+w_A = 0
+w_B = 1
 path_A = 'alignments/phrase_alignments.txt' # source | target | align_prob
 path_B = 'alignments/levenstein_ratio_alignments.txt'  # source | target | align_prob
 path_C = 'alignments/combined_alignments_p'+str(w_A)+'_e'+str(w_B)+'.txt'  # source | target | A | B | align_prob
@@ -71,7 +71,7 @@ def PrintProb(prob_dict_C, path_C, prob_dict_A, prob_dict_B):
                     A = prob_dict_A[key][y]
                 if key in prob_dict_B and y in prob_dict_B[key]:
                     B = prob_dict_B[key][y]
-                wp.write(key+' '+y+' '+str(normed[i])+' '+str(A)+' '+str(B)+'\n')
+                wp.write(key+' '+y+' '+str(A)+' '+str(B)+' '+str(raw[i])+' '+str(normed[i])+'\n')
                 i+=1
 
 

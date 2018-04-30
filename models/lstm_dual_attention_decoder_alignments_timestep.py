@@ -8,7 +8,7 @@ from models.dot_attention import SoftDotAttention
 from models.dual_attention import DualAttention
 
 class LSTMDualAttention(nn.Module):
-    def __init__(self, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):
+    def __init__(self, vocab_size, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):
         super(LSTMDualAttention, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -21,9 +21,10 @@ class LSTMDualAttention(nn.Module):
         self.attention_layer = DualAttention(encoder_hidden_size, hidden_size, field_rep_size)
 
         # define linear layers for it
-        self.time_weight_lin1 = nn.Linear(2*hidden_size, hidden_size//4) # Wp*decoder(t-1) + Wq*context(t)
+        self.time_weight_lin1 = nn.Linear(2*hidden_size, hidden_size) # Wp*decoder(t-1) + Wq*context(t)
         self.sig = nn.Sigmoid()
-        self.time_weight_lin2 = nn.Linear(hidden_size//4, 1)
+        self.tanh = nn.Tanh()
+        self.time_weight_lin2 = nn.Linear(hidden_size, 1)
 
 
 
@@ -57,7 +58,8 @@ class LSTMDualAttention(nn.Module):
             hidden, att, context_vec = recurrence(input[i], prev_hidden)
             output.append(hidden[0])
             attn.append(att)
-            lam = self.sig(self.time_weight_lin2(self.sig(self.time_weight_lin1(torch.cat((prev_hidden[0], context_vec), 1)))))
+            lam = self.sig(self.time_weight_lin2(self.tanh(self.time_weight_lin1(torch.cat((prev_hidden[0], context_vec), 1)))))
+            #lam = self.sig(self.time_weight_lin2(self.tanh(self.time_weight_lin1(torch.cat((prev_hidden[0], context_vec), 1)))))
             prev_hidden = hidden
             lamda.append(lam)
         output = torch.cat(output, 0).view(input.size(0), *output[0].size())

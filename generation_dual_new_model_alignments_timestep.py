@@ -275,6 +275,8 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         # TODO: Need to change here to incorporate alignment prob
         decoder_output = model.linear_out(decoder_output)
         attn_vector = torch.stack(attn_vector, dim=1) # ->(32L, 1L, 100L)
+        logsoftmax = nn.LogSoftmax(dim=2)
+        decoder_output = logsoftmax(decoder_output)
         lamda = torch.stack(lamda, dim=1) # (32L, 78L, 1L)
 
         #dim(align_prob) = batch X vocab X table length
@@ -285,7 +287,7 @@ def generate(value, value_len, field, ppos, pneg, batch_size, \
         p_lex = torch.bmm(attn_vector, align_prob) # do attn . align_prob' -> (32L, 1L, 20003L) same dimensions as decoder output
         p_mod = decoder_output
         p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L
-        print(lamda)
+        #print(lamda)
         out_softmax = nn.LogSoftmax(dim=2)
         p_bias = out_softmax(p_bias)
         decoder_output = p_bias # -> (batch, 1L, vocab)

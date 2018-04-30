@@ -25,7 +25,8 @@ class Seq2SeqDualModel(nn.Module):
         self.verbose = verbose
         self.cuda_var = cuda_var
         self.init_weights()
-        self.x = nn.Parameter(torch.zeros(1), requires_grad=True)
+        # self.x = nn.Parameter(torch.zeros(1), requires_grad=True)
+        self.x = nn.Parameter(torch.zeros(sent_vocab_size), requires_grad=True)
 
 
 

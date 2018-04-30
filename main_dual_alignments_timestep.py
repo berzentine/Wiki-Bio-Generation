@@ -26,7 +26,7 @@ parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
-parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/', help='location of the alignment files')
+parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/alignments.txt', help='location of the alignment files')
 parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
@@ -333,14 +333,14 @@ try:
                                          val_loss, math.exp(val_loss)))
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
-        #if not best_val_loss or val_loss < best_val_loss:
-        if not best_train_loss or tloss < best_train_loss:
+        if not best_val_loss or val_loss < best_val_loss:
+        # if not best_train_loss or tloss < best_train_loss:
             print("Saving best model")
             with open(model_save_path+"best_model.pth", 'wb') as f:
                 torch.save(model, f)
             best_train_loss = tloss
 
-            #best_val_loss = val_loss
+            best_val_loss = val_loss
             #else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             #    lr /= 2

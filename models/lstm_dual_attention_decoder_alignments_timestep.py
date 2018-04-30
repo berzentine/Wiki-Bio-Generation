@@ -21,10 +21,10 @@ class LSTMDualAttention(nn.Module):
         self.attention_layer = DualAttention(encoder_hidden_size, hidden_size, field_rep_size)
 
         # define linear layers for it
-        self.time_weight_lin1 = nn.Linear(2*hidden_size, 4*hidden_size) # Wp*decoder(t-1) + Wq*context(t)
+        self.time_weight_lin1 = nn.Linear(2*hidden_size, hidden_size) # Wp*decoder(t-1) + Wq*context(t)
         self.sig = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.time_weight_lin2 = nn.Linear(4*hidden_size, input_size)
+        self.time_weight_lin2 = nn.Linear(hidden_size, 1)
 
 
 

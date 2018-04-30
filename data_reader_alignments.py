@@ -105,7 +105,7 @@ class Corpus(object):
 
         self.populate_vocab(vocab_path, verbose)
         #print(self.word_vocab.idx2word[10429])
-        self.populate_word_alignments(alignment_path, use_pickle)
+        self.populate_log_word_alignments(alignment_path, use_pickle)
         #print(self.alignments[10429])
         self.train_value, self.train_field, \
         self.train_ppos, self.train_pneg, \

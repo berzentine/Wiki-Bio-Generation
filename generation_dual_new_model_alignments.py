@@ -35,7 +35,8 @@ parser.add_argument('--limit', type=float, default=0.05,help='limit size of data
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
-parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/', help='location of the alignment files')
+parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/alignments.txt', help='location of the alignment files')
+parser.add_argument('--alignments_pickle', type=str, default='./data/Wiki-Data/alignments/alignments.pickle', help='location of the alignment files')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
@@ -76,6 +77,7 @@ field_emb_size = args.field_emsize
 pos_emb_size = args.pos_emsize
 hidden_size = args.nhid
 alignment_path = args.alignments
+alignment_pickle_path = args.alignments_pickle
 use_pickle = args.use_pickle
 batchsize = args.batchsize
 data_path = args.data
@@ -103,7 +105,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data starting")
-corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, use_pickle, 1, limit, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)
@@ -360,7 +362,7 @@ def test_evaluate(data_source, data_order, test):
                             if u=='<eos>':
                                 break
                             up.write(str(k)+" "+u+" ")
-                        plot_attention(unk_rep_seq[b], [corpus.word_vocab.idx2word[int(x)] for x in value[b]], attn_matrix[b], file_name="./attn_matrices/"+str(k)+".png")
+                        #plot_attention(unk_rep_seq[b], [corpus.word_vocab.idx2word[int(x)] for x in value[b]], attn_matrix[b], file_name="./attn_matrices/"+str(k)+".png")
                         k+=1
                         for r in ref_seq[b]:
                             if r=='<eos>':

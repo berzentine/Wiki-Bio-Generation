@@ -10,6 +10,7 @@ import data_reader_alignments as data_reader
 import random
 from batchify_pad import batchify, get_batch_alignments
 from models.dual_alignments_timestep import Seq2SeqDualModel
+from utils.embeddings import filter_word_embeddings
 from utils.plot_utils import plot
 from torch.autograd import Variable
 
@@ -30,6 +31,7 @@ parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignmen
 parser.add_argument('--alignments_pickle', type=str, default='./data/Wiki-Data/alignments/alignments.pickle', help='location of the alignment files')
 parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
+parser.add_argument('--eng_emb_path', type=str, default='../word2vec/GoogleNews-vectors-negative300.bin',help='location of the english word embeddings')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
 parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
 parser.add_argument('--field_emsize', type=int, default=50,help='size of field embeddings')
@@ -60,6 +62,7 @@ data_path = args.data
 vocab_path = args.vocab
 alignment_path = args.alignments
 alignment_pickle_path = args.alignments_pickle
+eng_emb_path = args.eng_emb_path
 use_pickle = args.use_pickle
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
@@ -114,6 +117,12 @@ corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, cor
 
 corpus.create_data_dictionaries()
 
+print("Load embedding")
+vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+#vec = np.zeros((WORD_VOCAB_SIZE, 1000))
+EMBED_SIZE = vec.shape[1]
+print(EMBED_SIZE)
+
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)
     print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent...and values', '-- Should be equal across rows --')
@@ -137,7 +146,7 @@ model = Seq2SeqDualModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD
                          pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                          field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                          pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
-                         decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda,x=x)
+                         decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda,x=x, pretrained=vec)
 
 weight_mask = torch.ones(WORD_VOCAB_SIZE)
 if args.cuda:

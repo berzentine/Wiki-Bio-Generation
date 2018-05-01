@@ -80,6 +80,23 @@ class Seq2SeqDualModel(nn.Module):
         #print(p_bias)
         out_softmax = nn.LogSoftmax(dim=2)
         p_bias = out_softmax(p_bias)
+
+        ########################
+        # adding additional LOSS
+        ########################
+        # attn_pred should be a prediction of 32 X 78, basically max in last dimension to get max attended at word each time
+        max_val, max_idx = torch.max(attn, 2) #-> 32 X 78
+        # Replace max_index with word_index from the table, like attended position 5 replace it with word at position 5
+        word_idx = self.indx2word(max_idx, value) # ->   32 X 78
+        if self.cuda_var:
+            word_idx = word_idx.cuda()
+        attn_pred = self.sent_lookup(word_idx) # Replace word_index with embeddings
+
+        max_val, max_idx = torch.max(p_bias, 2) #-> # handle decoder predictions
+        decoder_pred =  self.sent_lookup(max_idx)
+        #print attn_pred.size(), decoder_pred.size() -> same dimensions (32L, 78L, 400L)
+
+
         #print(p_bias)
-        return p_bias, decoder_hidden # should return the changed and weighted decoder output and not this output
+        return p_bias, decoder_hidden, attn_pred, decoder_pred # should return the changed and weighted decoder output and not this output
         # should return decoder_output + LfAi + e

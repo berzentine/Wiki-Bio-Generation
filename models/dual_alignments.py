@@ -48,6 +48,18 @@ class Seq2SeqDualModel(nn.Module):
     #     return decoder_output, decoder_hidden
 
 
+    # converts the max attended index to a table word to lookup
+    def indx2word(self, max_index, value): # max_index -> batch X sent_length
+        indx2word = Variable(torch.LongTensor(max_index.size(0), max_index.size(1)))
+        if self.cuda_var:
+            indx2word = indx2word.cuda()
+        for i in range(max_index.size(0)):
+            for j in range(max_index.size(1)):
+                indx2word[i,j] = value[i, int(max_index[i,j])]
+        return indx2word
+
+
+
     def forward_with_attn(self, sent, value, field, ppos, pneg, batch_size, value_mask, align_prob, epsilon=0.001):
 
         input_d = self.sent_lookup(value)
@@ -77,5 +89,21 @@ class Seq2SeqDualModel(nn.Module):
         p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L)
         out_softmax = nn.LogSoftmax(dim=2)
         p_bias = out_softmax(p_bias)
-        return p_bias, decoder_hidden # should return the changed and weighted decoder output and not this output
+        ########################
+        # adding additional LOSS
+        ########################
+        # attn_pred should be a prediction of 32 X 78, basically max in last dimension to get max attended at word each time
+        max_val, max_idx = torch.max(attn, 2) #-> 32 X 78
+        # Replace max_index with word_index from the table, like attended position 5 replace it with word at position 5
+        word_idx = self.indx2word(max_idx, value) # ->   32 X 78
+        if self.cuda_var:
+            word_idx = word_idx.cuda()
+        attn_pred = self.sent_lookup(word_idx) # Replace word_index with embeddings
+
+        max_val, max_idx = torch.max(p_bias, 2) #-> # handle decoder predictions
+        decoder_pred =  self.sent_lookup(max_idx)
+        #print attn_pred.size(), decoder_pred.size() -> same dimensions (32L, 78L, 400L)
+
+
+        return p_bias, decoder_hidden, attn_pred, decoder_pred # should return the changed and weighted decoder output and not this output
         # should return decoder_output + LfAi + e

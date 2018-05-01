@@ -40,6 +40,7 @@ parser.add_argument('--clip', type=float, default=5,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
+parser.add_argument('--use_cosine', type=bool, required=True,help='boolean to use cosine loss')
 
 args = parser.parse_args()
 cuda = args.cuda
@@ -64,7 +65,7 @@ lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
 max_length = args.max_sent_length
-
+use_cosine = args.use_cosine
 
 ###############################################################################
 # Code Setup
@@ -146,6 +147,7 @@ if args.cuda:
 
 weight_mask[0] = 0
 criterion = nn.NLLLoss(ignore_index=0, weight=weight_mask, size_average=True)
+cosine_loss = nn.CosineEmbeddingLoss()
 #criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
@@ -218,7 +220,7 @@ def train():
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
         field_ununk , value_ununk, sent_mask, value_mask, alignments  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
+        decoder_output, decoder_hidden, attn_pred, decoder_pred = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):
@@ -238,6 +240,12 @@ def train():
         #print(loss.data)
         # decoder_output = decoder_output.view(-1, WORD_VOCAB_SIZE).contiguous()
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
+        if use_cosine:
+            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            if cuda:
+                y = y.cuda()
+            loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)
+            loss+=loss_cosine
         #print(sent_len)
         #print(loss.data)
         #exit(0)
@@ -300,12 +308,19 @@ def evaluate(data_source, data_order, test):
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \
         value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
-        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
+        decoder_output, decoder_hidden, attn_pred, decoder_pred = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 
         loss = 0
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
+
+        if use_cosine:
+            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            if cuda:
+                y = y.cuda()
+            loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)
+            loss+=loss_cosine
         #for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
         #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])

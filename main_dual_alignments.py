@@ -26,7 +26,8 @@ parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')
 parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset-dummy/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
-parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments-debug/', help='location of the alignment files')
+parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/', help='location of the alignment files')
+parser.add_argument('--alignments_pickle', type=str, default='./data/Wiki-Data/alignments/alignments.pickle', help='location of the alignment files')
 parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
@@ -59,6 +60,7 @@ batchsize = args.batchsize
 data_path = args.data
 vocab_path = args.vocab
 alignment_path = args.alignments
+alignment_pickle_path = args.alignments_pickle
 use_pickle = args.use_pickle
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
@@ -87,7 +89,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
-corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, use_pickle, 1, limit, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)

@@ -32,7 +32,7 @@ class Data(object):
 
 
 class Corpus(object):
-    def __init__(self, path, vocab_path, alignment_path, use_pickle, top_k, limit, verbose): # top_k is the number of sentences we would be generating
+    def __init__(self, path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, top_k, limit, verbose): # top_k is the number of sentences we would be generating
         self.field_vocab = Dictionary()
         self.word_vocab = Dictionary()
 
@@ -105,7 +105,7 @@ class Corpus(object):
 
         self.populate_vocab(vocab_path, verbose)
         #print(self.word_vocab.idx2word[10429])
-        self.populate_word_alignments(alignment_path, use_pickle)
+        self.populate_word_alignments(alignment_path, alignment_pickle_path, use_pickle)
         #print(self.alignments[10429])
         self.train_value, self.train_field, \
         self.train_ppos, self.train_pneg, \
@@ -197,9 +197,9 @@ class Corpus(object):
         temp_pneg+= current[::-1]
         return temp_pneg
 
-    def populate_log_word_alignments(self, alignment_path, use_pickle=False, epsilon=0.0001):
+    def populate_log_word_alignments(self, alignment_path, alignment_pickle_path, use_pickle=False, epsilon=0.0001):
         if use_pickle:
-            with open(alignment_path, "rb") as fp:
+            with open(alignment_pickle_path, "rb") as fp:
                 self.alignments = pickle.load(fp)
             return
         file = open(alignment_path, "r")
@@ -269,12 +269,12 @@ class Corpus(object):
             self.alignments[pad_id][word] = -103.000
         #self.alignments[pad_id][pad_id] = 0 + epsilon
         self.alignments[pad_id][pad_id] = 0
-        with open(alignment_path, "wb") as fp:
+        with open(alignment_pickle_path, "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def populate_word_alignments(self, alignment_path, use_pickle=False, epsilon=0.00001):
+    def populate_word_alignments(self, alignment_path, alignment_pickle_path, use_pickle=False, epsilon=0.00001):
         if use_pickle:
-            with open(alignment_path, "rb") as fp:
+            with open(alignment_pickle_path, "rb") as fp:
                 self.alignments = pickle.load(fp)
             return
         file = open(alignment_path, "r")
@@ -344,7 +344,7 @@ class Corpus(object):
             self.alignments[pad_id][word] = math.log(epsilon)
         #self.alignments[pad_id][pad_id] = 0 + epsilon
         self.alignments[pad_id][pad_id] = math.log(1)
-        with open(alignment_path, "wb") as fp:
+        with open(alignment_pickle_path, "wb") as fp:
             pickle.dump(self.alignments, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def new_populate_stores(self, path, data_path, top_k, limit, verbose):

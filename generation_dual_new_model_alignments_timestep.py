@@ -13,6 +13,7 @@ import random
 from batchify_pad import batchify, get_batch_alignments
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 #from models.joint_model import Seq2SeqModel
+from utils.embeddings import filter_word_embeddings
 from utils.plot_utils import plot
 from torch.autograd import Variable
 import matplotlib
@@ -42,6 +43,7 @@ parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help
 parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
 parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
 parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
+parser.add_argument('--eng_emb_path', type=str, default='../word2vec/GoogleNews-vectors-negative300.bin',help='location of the english word embeddings')
 parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
 parser.add_argument('--field_emsize', type=int, default=50,help='size of field embeddings')
 parser.add_argument('--pos_emsize', type=int, default=5,help='size of position embeddings')
@@ -82,6 +84,7 @@ use_pickle = args.use_pickle
 batchsize = args.batchsize
 data_path = args.data
 vocab_path = args.vocab
+eng_emb_path = args.eng_emb_path
 plot_save_path = args.plot_save_path
 model_save_path = args.model_save_path
 lr = args.lr
@@ -132,6 +135,11 @@ corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, cor
 
 corpus.create_data_dictionaries()
 
+print("Load embedding")
+vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+#vec = np.zeros((WORD_VOCAB_SIZE, 1000))
+EMBED_SIZE = vec.shape[1]
+print(EMBED_SIZE)
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)

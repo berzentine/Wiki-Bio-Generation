@@ -41,7 +41,7 @@ parser.add_argument('--clip', type=float, default=5,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
-parser.add_argument('--use_cosine', type=bool, required=True,help='boolean to use cosine loss')
+parser.add_argument('--use_cosine', type=bool, required=False, default=False, help='boolean to use cosine loss')
 
 args = parser.parse_args()
 cuda = args.cuda

@@ -242,7 +242,7 @@ class Corpus(object):
                 #print(sum)
                 #print((1 - sum)/4)
                 #print(math.log((1 - sum)/4))
-                #sum = min(1, sum) 
+                #sum = min(1, sum)
                 #print((1 - sum)/4)
                 #print(math.log((1 - sum)/4))
                 #if sum != 1.0:

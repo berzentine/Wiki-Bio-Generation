@@ -24,7 +24,7 @@ parser.add_argument('--limit', type=float, default=1,help='limit size of data')
 parser.add_argument('--seed', type=int, default=1,help='random seed')
 parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
 parser.add_argument('--lr', type=float, default=0.0005,help='learning rate')
-parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
+parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset-dummy/',help='location of the data corpus')
 parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
 parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/', help='location of the alignment files')
 parser.add_argument('--alignments_pickle', type=str, default='./data/Wiki-Data/alignments/alignments.pickle', help='location of the alignment files')
@@ -41,6 +41,8 @@ parser.add_argument('--clip', type=float, default=5,help='gradient clip')
 parser.add_argument('--log_interval', type=float, default=500,help='log interval')
 parser.add_argument('--epochs', type=int, default=50,help='epochs')
 parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sentence length for decoding')
+parser.add_argument('--use_cosine', type=bool, required=True,help='boolean to use cosine loss')
+
 
 args = parser.parse_args()
 cuda = args.cuda
@@ -66,7 +68,7 @@ lr = args.lr
 clip = args.clip
 log_interval = args.log_interval
 max_length = args.max_sent_length
-
+use_cosine = args.use_cosine
 
 ###############################################################################
 # Code Setup
@@ -143,11 +145,12 @@ if args.cuda:
     model.cuda()
     weight_mask = torch.ones(WORD_VOCAB_SIZE).cuda()
 
-
+print("Start training")
 #Build criterion and optimizer
 
 weight_mask[0] = 0
 criterion = nn.NLLLoss(ignore_index=0, weight=weight_mask, size_average=True)
+cosine_loss = nn.CosineEmbeddingLoss()
 #criterion1 = nn.CrossEntropyLoss(ignore_index=0, size_average=False)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
@@ -161,6 +164,8 @@ def get_data(data_source, num, evaluation):
     sent_ununk = data_source['sent_ununk'][num]
 
     value = data_source['value'][num]
+    # value is a list of values \s
+    #in the table, preserving position
     ppos = data_source['ppos'][num]
     pneg = data_source['pneg'][num]
     sent = batch[:, 0:batch.size(1)-1]
@@ -220,7 +225,7 @@ def train():
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
         field_ununk , value_ununk, sent_mask, value_mask, alignments  = get_data(corpus.train, batch_num, False)
         #print sent.shape, sent_len
-        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
+        decoder_output, decoder_hidden, attn_pred, decoder_pred = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
         loss = 0
         words = 0
         #for bsz in range(decoder_output.size(0)):
@@ -240,6 +245,13 @@ def train():
         #print(loss.data)
         # decoder_output = decoder_output.view(-1, WORD_VOCAB_SIZE).contiguous()
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
+        #y = torch.ones()
+        if use_cosine:
+            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            if cuda:
+                y = y.cuda()
+            loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)
+            loss+=loss_cosine
         #print(sent_len)
         #print(loss.data)
         #exit(0)
@@ -302,12 +314,18 @@ def evaluate(data_source, data_order, test):
     for batch_num in data_order:
         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, field_ununk , \
         value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
-        decoder_output, decoder_hidden = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
+        decoder_output, decoder_hidden, attn_pred, decoder_pred = model.forward_with_attn(sent, value, field, ppos, pneg, batchsize, value_mask, alignments)
         """decoder_output, decoder_hidden = model.generate(value, field, ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab)"""
 
         loss = 0
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
+        if use_cosine:
+            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            if cuda:
+                y = y.cuda()
+            loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)
+            loss+=loss_cosine
         #for di in range(decoder_output.size(1)): # decoder_output = batch_len X seq_len X vocabsize
         #best_vocab, best_index = decoder_output[:,di,:].data.topk(1)
         #    loss += criterion(decoder_output[:, di, :].squeeze(), target[:,di])

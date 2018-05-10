@@ -252,7 +252,7 @@ def train():
         # decoder_output = decoder_output.view(-1, WORD_VOCAB_SIZE).contiguous()
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
         if use_cosine:
-            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            y = Variable(torch.ones(attn_pred.view(-1, word_emb_size).size(0)))
             if cuda:
                 y = y.cuda()
             loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)
@@ -327,7 +327,7 @@ def evaluate(data_source, data_order, test):
         loss = criterion(decoder_output.view(-1, WORD_VOCAB_SIZE), target.contiguous().view(-1))
 
         if use_cosine:
-            y = Variable(torch.ones(decoder_pred.size(0)*decoder_pred.size(1)))
+            y = Variable(torch.ones(attn_pred.view(-1, word_emb_size).size(0)))
             if cuda:
                 y = y.cuda()
             loss_cosine = cosine_loss(attn_pred.view(-1, word_emb_size), decoder_pred.view(-1, word_emb_size), y)

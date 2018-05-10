@@ -24,7 +24,7 @@ class Seq2SeqDualModel(nn.Module):
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
         self.verbose = verbose
         self.cuda_var = cuda_var
-        self.target_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
+        self.target_lookup = nn.Embedding(sent_vocab_size, 300)
         if pretrained is not None:
             self.target_lookup.weight.data.copy_(torch.from_numpy(pretrained))
             for param in self.target_lookup.parameters():

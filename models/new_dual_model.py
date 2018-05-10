@@ -70,8 +70,9 @@ class Seq2SeqDualModel(nn.Module):
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         input = torch.cat((input_d,input_z), 2)
         encoder_output, encoder_hidden = self.encoder(input, None)
-        gen_seq = []
-        unk_rep_seq = []
+        gen_seq = [[] for b in range(batch_size)]
+        unk_rep_seq = [[] for b in range(batch_size)]
+        attention_matrix = [[] for b in range(batch_size)]
         start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
         if self.cuda_var:
             start_symbol = start_symbol.cuda()

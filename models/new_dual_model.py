@@ -45,7 +45,7 @@ class Seq2SeqDualModel(nn.Module):
     #     return decoder_output, decoder_hidden
 
 
-    def forward_with_attn(self, sent, value, field, ppos, pneg, batch_size, value_mask, align_prob, epsilon=0.001):
+    def forward_with_attn(self, sent, value, field, ppos, pneg, batch_size, value_mask):
 
         input_d = self.sent_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)

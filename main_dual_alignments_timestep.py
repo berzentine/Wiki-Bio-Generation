@@ -140,18 +140,21 @@ if verbose:
 
 x = Variable(torch.zeros(1), requires_grad=True)
 if use_alignments and alignment_function == 'timestep':
+    print("SOTA + ALIGN + TIMESTEP MODEL")
     model = Seq2SeqDualModelAlignTimestep(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                          pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                          field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                          pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
                          decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda, x=x, pretrained=vec)
 elif use_alignments and alignment_function == 'single_param':
+    print("SOTA + ALIGN + SINGLE PARAM MODEL")
     model = Seq2SeqDualModelAlign(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                                           pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                                           field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,
                                           pneg_embed_size=pos_emb_size, encoder_hidden_size=hidden_size, decoder_hidden_size=hidden_size,
                                           decoder_num_layer=num_layers, verbose=verbose, cuda_var=cuda, x=x, pretrained=vec)
 else:
+    print("SOTA")
     model = Seq2SeqDualModel(sent_vocab_size=WORD_VOCAB_SIZE, field_vocab_size=FIELD_VOCAB_SIZE, ppos_vocab_size=POS_VOCAB_SIZE,
                              pneg_vocab_size=POS_VOCAB_SIZE, value_vocab_size=WORD_VOCAB_SIZE, sent_embed_size=word_emb_size,
                              field_embed_size=field_emb_size, value_embed_size=word_emb_size, ppos_embed_size=pos_emb_size,

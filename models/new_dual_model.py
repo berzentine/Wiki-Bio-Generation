@@ -59,24 +59,6 @@ class Seq2SeqDualModel(nn.Module):
         decoder_output = self.linear_out(decoder_output)
         logsoftmax = nn.LogSoftmax(dim=2)
         decoder_output = logsoftmax(decoder_output)
-        #print(len(attn), decoder_output.size(), attn[0].size()) # (78, (32L, 78L, 20003L), (32L, 100L))
 
-        # stack the attention vector in the second dimension -> basically convert the list of 78 attn vectors to (32, 78,100 ) single matrix
-        attn = torch.stack(attn, dim=1) # (32L, 78L, 100L)
-        m = nn.Sigmoid()
-        lamda = m(self.x)
-        #print('lambda', lamda)
-        #for param in self.parameters():
-        #    print param.size()
-        #epsilon  = 0.001
-        #dim(align_prob) = batch X vocab X table length
-        #align_prob = Variable(torch.rand(attn.size(0), decoder_output.size(2), attn.size(2)))   # (32L, 20003L, 100L)
-        if self.cuda_var:
-            align_prob = align_prob.cuda()
-        p_lex = torch.bmm(attn, align_prob) # do attn . align_prob' -> (32L, 78L, 20003L) same dimensions as decoder output
-        p_mod = decoder_output
-        p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L)
-        out_softmax = nn.LogSoftmax(dim=2)
-        p_bias = out_softmax(p_bias)
-        return p_bias, decoder_hidden # should return the changed and weighted decoder output and not this output
+        return decoder_output, decoder_hidden # should return the changed and weighted decoder output and not this output
         # should return decoder_output + LfAi + e

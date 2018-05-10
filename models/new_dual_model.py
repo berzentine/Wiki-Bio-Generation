@@ -84,24 +84,24 @@ class Seq2SeqDualModel(nn.Module):
             # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
             decoder_output, prev_hidden, attn_vector = self.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
             decoder_output = self.linear_out(decoder_output)
-            max_val, max_idx = torch.max(decoder_output.squeeze(), 0)
-            curr_input = self.sent_lookup(max_idx).unsqueeze(0)
-            # TODO: Issue here
-            # print curr_input.shape()
-            # exit(0)
-            if dictionary.idx2word[int(max_idx)] == '<eos>':
-                break
-            if int(max_idx) == unk_symbol:
-                if self.cuda_var:
-                    value_ununk = value_ununk.cuda()
-                unk_max_val, unk_max_idx = torch.max(attn_vector[0][0,:value_len[0]], 0)
-                sub = value_ununk[0][unk_max_idx] # should be value_ununk
-                word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
-                print("Unk got replaced with", word)
-            else:
-                word = dictionary.idx2word[int(max_idx)]
-            gen_seq.append(dictionary.idx2word[int(max_idx)])
-            unk_rep_seq.append(word)
-            if dictionary.idx2word[int(max_idx)] == '<eos>':
-                break
+
+            max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
+            curr_input =  self.sent_lookup(max_idx) #-> (batch, 1L, embed size)
+
+            for b in range(batch_size):
+                max_word_index = int(max_idx[b,0])
+                if max_word_index == unk_symbol:
+                    if self.cuda_var:
+                        value_ununk = value_ununk.cuda()
+                    # TODO: Double check this is correct
+                    unk_max_val, unk_max_idx = torch.max(attn_vector[b][0,:value_len[b]], 0)
+                    sub = value_ununk[b][unk_max_idx] # should be value_ununk
+                    word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
+                    print("Unk got replaced with", word)
+                else:
+                    word = dictionary.idx2word[int(max_word_index)]
+                    #print ('Ununk ', word)
+                gen_seq[b].append(dictionary.idx2word[max_word_index])
+                unk_rep_seq[b].append(word)
+                # TODO: Double check this is correct
         return gen_seq, unk_rep_seq

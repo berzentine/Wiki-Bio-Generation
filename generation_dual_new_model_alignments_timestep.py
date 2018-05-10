@@ -12,7 +12,6 @@ import data_reader_alignments as data_reader
 import random
 from batchify_pad import batchify, get_batch_alignments
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-#from models.joint_model import Seq2SeqModel
 from utils.embeddings import filter_word_embeddings
 from utils.plot_utils import plot
 from torch.autograd import Variable
@@ -57,6 +56,7 @@ parser.add_argument('--max_sent_length', type=int, default=64 ,help='maximum sen
 parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
 parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced generated file')
+parser.add_argument('--use_alignments', type=bool, required=False, default=False, help='boolean to use alignments')
 
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
@@ -79,6 +79,7 @@ field_emb_size = args.field_emsize
 pos_emb_size = args.pos_emsize
 hidden_size = args.nhid
 alignment_path = args.alignments
+use_alignments = args.use_alignments
 alignment_pickle_path = args.alignments_pickle
 use_pickle = args.use_pickle
 batchsize = args.batchsize
@@ -108,7 +109,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data starting")
-corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose)
+corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose, use_alignments)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)
@@ -208,8 +209,8 @@ def get_data(data_source, num, evaluation):
     value_len = data_source['value_len'][num]
     sent_mask = data_source['sent_mask'][num]
     value_mask = data_source['value_mask'][num]
-
-    alignments = get_batch_alignments(value, corpus.alignments)
+    if use_alignments:
+        alignments = get_batch_alignments(value, corpus.alignments)
     #alignments = None
     # alignments = data_source['alignments'][num]
     # data = torch.stack(data)
@@ -222,7 +223,8 @@ def get_data(data_source, num, evaluation):
         ppos = ppos.cuda()
         pneg = pneg.cuda()
         value_mask = value_mask.cuda()
-        alignments = alignments.cuda()
+        if use_alignments:
+            alignments = alignments.cuda()
 
     sent = Variable(sent, volatile=evaluation)
     field = Variable(field, volatile=evaluation)
@@ -230,106 +232,26 @@ def get_data(data_source, num, evaluation):
     ppos = Variable(ppos, volatile=evaluation)
     pneg = Variable(pneg, volatile=evaluation)
     value_mask = Variable(value_mask, volatile=evaluation)
-    alignments = Variable(alignments)
+    if use_alignments:
+        alignments = Variable(alignments)
     field_ununk = Variable(field_ununk, volatile=evaluation)
     value_ununk = Variable(value_ununk, volatile=evaluation)
     sent_ununk = Variable(sent_ununk, volatile=evaluation)
 
     target = Variable(target)
-    return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk,\
+    if use_alignments:
+        return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk,\
            field_ununk , value_ununk, sent_mask, value_mask, alignments
-
+    else:
+        return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+               field_ununk , value_ununk, sent_mask, value_mask
 
 
 test_batches = [x for x in range(0, len(corpus.test["sent"]))]
 train_batches = [x for x in range(0, len(corpus.train["sent"]))]
 val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
 
-def generate(value, value_len, field, ppos, pneg, batch_size, \
-             train, max_length, start_symbol, end_symbol, dictionary, unk_symbol, \
-             ununk_dictionary, value_ununk, value_mask, sent, align_prob):
-    # input_d = model.sent_lookup(value)
-    # input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
-    # encoder_initial_hidden = model.encoder.init_hidden(batch_size, model.encoder_hidden_size)
-    # if cuda:
-    #     encoder_initial_hidden = encoder_initial_hidden.cuda()
-    # encoder_output, encoder_hidden = model.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden, mask=value_mask)
-    # encoder_output = torch.stack(encoder_output, dim=0)
-    # encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
-    #print value.size()
-    input_d = model.sent_lookup(value)
-    model.field_lookup(field).size(), model.ppos_lookup(ppos).size(), model.ppos_lookup(pneg).size()
-    input_z = torch.cat((model.field_lookup(field), model.ppos_lookup(ppos), model.pneg_lookup(pneg)), 2)
 
-    input = torch.cat((input_d,input_z), 2)
-    encoder_output, encoder_hidden = model.encoder(input, None)
-    gen_seq = [[] for b in range(batch_size)]
-    unk_rep_seq = [[] for b in range(batch_size)]
-    attention_matrix = [[] for b in range(batch_size)]
-    start_symbol =  Variable(torch.LongTensor(batch_size,1).fill_(start_symbol))
-    if cuda:
-        start_symbol = start_symbol.cuda()
-    curr_input = model.sent_lookup(start_symbol) #-> (batch, 1L, embed size)
-
-    #print encoder_hidden[0].size()
-    encoder_hidden = (encoder_hidden[0].view(1, encoder_hidden[0].size(1), encoder_hidden[0].size(0)*encoder_hidden[0].size(2)), \
-                    encoder_hidden[1].view(1, encoder_hidden[1].size(1), encoder_hidden[1].size(0)*encoder_hidden[1].size(2)))
-
-    prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
-    #print encoder_hidden[0].size(), 'later'
-    #exit(0)
-    for i in range(max_length):
-        # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output, prev_hidden, attn_vector, lamda = model.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
-        # Need to change here to include prob alignments and use learned lambda here
-        # TODO: Need to change here to incorporate alignment prob
-        decoder_output = model.linear_out(decoder_output)
-        attn_vector = torch.stack(attn_vector, dim=1) # ->(32L, 1L, 100L)
-        logsoftmax = nn.LogSoftmax(dim=2)
-        decoder_output = logsoftmax(decoder_output)
-        lamda = torch.stack(lamda, dim=1) # (32L, 78L, 1L)
-
-        #dim(align_prob) = batch X vocab X table length
-        #align_prob = Variable(torch.rand(attn_vector.size(0), attn_vector.size(2), decoder_output.size(2)))   # (32L, 20003L, 100L)
-        if cuda:
-            align_prob = align_prob.cuda()
-        #print(align_prob.size(), attn_vector.size()) # -> ((batchsize, vocab, tab_length), (batchsize, seq_legth, tab_length)) = ((32L, 20003L, 100L), (32L, 1L, 100L))
-        p_lex = torch.bmm(attn_vector, align_prob) # do attn . align_prob' -> (32L, 1L, 20003L) same dimensions as decoder output
-        p_mod = decoder_output
-        p_bias = lamda*p_lex + (1-lamda)*p_mod # (32L, 78L, 20003L
-        #print(lamda)
-        out_softmax = nn.LogSoftmax(dim=2)
-        p_bias = out_softmax(p_bias)
-        decoder_output = p_bias # -> (batch, 1L, vocab)
-        #print gen_seq
-        max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
-        curr_input =  model.sent_lookup(max_idx) #-> (batch, 1L, embed size)
-
-        #attention_matrix = None
-        #attention_matrix.append(attn_vector[0][0,:value_len[0]].data.cpu().numpy())
-
-        for b in range(batch_size):
-            max_word_index = int(max_idx[b,0])
-            if max_word_index == unk_symbol:
-                if cuda:
-                    value_ununk = value_ununk.cuda()
-                # TODO: Double check this is correct
-                unk_max_val, unk_max_idx = torch.max(attn_vector[b][0,:value_len[b]], 0)
-                sub = value_ununk[b][unk_max_idx] # should be value_ununk
-                word = ununk_dictionary.idx2word[int(sub)] # should be replaced from ununk dictionary word_ununk_vocab
-                print("Unk got replaced with", word)
-            else:
-                word = dictionary.idx2word[int(max_word_index)]
-                #print ('Ununk ', word)
-            gen_seq[b].append(dictionary.idx2word[max_word_index])
-            unk_rep_seq[b].append(word)
-            # TODO: Double check this is correct
-            attention_matrix[b].append(attn_vector[b][0,:value_len[b]].data.cpu().numpy())
-
-
-
-    # np.stack(attention_matrix)
-    return gen_seq, unk_rep_seq,attention_matrix
 
 
 
@@ -346,16 +268,27 @@ def test_evaluate(data_source, data_order, test):
                 start_time = time.time()
                 #random.shuffle(data_order)
                 for batch_num in data_order:
-                    sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
-                    field_ununk , value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
                     ref_seq = [[] for b in range(batchsize)]
+                    if use_alignments:
+                        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+                        field_ununk , value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
 
-                    gen_seq, unk_rep_seq, attn_matrix = generate(value, value_len, field, \
+                        gen_seq, unk_rep_seq, attn_matrix = model.generate(value, value_len, field, \
                                                     ppos, pneg, batchsize, False, max_length, \
                                                     corpus.word_vocab.word2idx["<sos>"],  \
                                                     corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
                                                     corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, \
                                                     value_mask, actual_sent, alignments)
+                    else :
+                        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+                        field_ununk , value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
+                        gen_seq, unk_rep_seq, attn_matrix = model.generate(value, value_len, field, \
+                                                                           ppos, pneg, batchsize, False, max_length, \
+                                                                           corpus.word_vocab.word2idx["<sos>"], \
+                                                                           corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
+                                                                           corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, \
+                                                                           value_mask, actual_sent)
+
 
 
                     # TODO: Make this batched in terms of getting reference sentences
@@ -413,7 +346,7 @@ def test_evaluate(data_source, data_order, test):
     return
 
 # Load the best saved model.
-with open(model_save_path+"best_model.pth", 'rb') as f:
+with open(model_save_path, 'rb') as f:
     model = torch.load(f)
 # Run on test data.
 print('Evaluating model')

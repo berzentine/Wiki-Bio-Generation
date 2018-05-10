@@ -8,10 +8,10 @@ import math
 from models.lstm_dual_attention_decoder_alignments_timestep import LSTMDualAttention
 
 
-class Seq2SeqDualModel(nn.Module):
+class Seq2SeqDualModelAlignTimestep(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
                  value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, x, pretrained = None):
-        super(Seq2SeqDualModel, self).__init__()
+        super(Seq2SeqDualModelAlignTimestep, self).__init__()
         self.encoder_hidden_size = encoder_hidden_size
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
         self.field_lookup = nn.Embedding(field_vocab_size, field_embed_size)

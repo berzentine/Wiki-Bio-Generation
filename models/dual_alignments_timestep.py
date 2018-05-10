@@ -10,7 +10,7 @@ from models.lstm_dual_attention_decoder_alignments_timestep import LSTMDualAtten
 
 class Seq2SeqDualModelAlignTimestep(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
-                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, use_alignments, pretrained = None):
+                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, x, pretrained = None):
         super(Seq2SeqDualModelAlignTimestep, self).__init__()
         self.encoder_hidden_size = encoder_hidden_size
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
@@ -23,7 +23,6 @@ class Seq2SeqDualModelAlignTimestep(nn.Module):
         self.decoder = LSTMDualAttention(vocab_size = sent_vocab_size, input_size=sent_embed_size, field_rep_size=self.field_rep_embed_size, hidden_size=decoder_hidden_size, encoder_hidden_size=encoder_hidden_size, batch_first=True)
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
         self.verbose = verbose
-        self.use_alignments = use_alignments
         self.cuda_var = cuda_var
         self.target_lookup = nn.Embedding(sent_vocab_size, 300)
         if pretrained is not None:

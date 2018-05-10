@@ -10,7 +10,7 @@ from models.lstm_dual_attention_decoder import LSTMDualAttention
 
 class Seq2SeqDualModel(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
-                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, use_alignments):
+                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, x):
         super(Seq2SeqDualModel, self).__init__()
         self.encoder_hidden_size = encoder_hidden_size
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
@@ -23,7 +23,6 @@ class Seq2SeqDualModel(nn.Module):
         self.decoder = LSTMDualAttention(input_size=sent_embed_size, field_rep_size=self.field_rep_embed_size, hidden_size=decoder_hidden_size, encoder_hidden_size=encoder_hidden_size, batch_first=True)
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
         self.verbose = verbose
-        self.use_alignments = use_alignments
         self.cuda_var = cuda_var
         self.init_weights()
         self.x = nn.Parameter(torch.zeros(1), requires_grad=True)

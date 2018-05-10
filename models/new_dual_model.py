@@ -85,12 +85,13 @@ class Seq2SeqDualModel(nn.Module):
             # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
             decoder_output, prev_hidden, attn_vector = self.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
             decoder_output = self.linear_out(decoder_output)
+            attn_vector = torch.stack(attn_vector, dim=1)
 
             max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
             curr_input =  self.sent_lookup(max_idx) #-> (batch, 1L, embed size)
 
             for b in range(batch_size):
-                max_word_index = int(max_idx[b,0])
+                max_word_index = int(max_idx[b, 0])
                 if max_word_index == unk_symbol:
                     if self.cuda_var:
                         value_ununk = value_ununk.cuda()

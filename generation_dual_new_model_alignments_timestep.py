@@ -282,7 +282,7 @@ def test_evaluate(data_source, data_order, test):
                     else :
                         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
                         field_ununk , value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
-                        gen_seq, unk_rep_seq, attn_matrix = model.generate(value, value_len, field, \
+                        gen_seq, unk_rep_seq = model.generate(value, value_len, field, \
                                                                            ppos, pneg, batchsize, False, max_length, \
                                                                            corpus.word_vocab.word2idx["<sos>"], \
                                                                            corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \

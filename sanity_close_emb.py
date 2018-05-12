@@ -1,19 +1,15 @@
 # should take test data as input
 # spit out the generated text and the original text
-import torchwordemb
-import math
-import time
 import argparse
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import data_reader_replicated as data_reader
 import random
-from batchify_pad import batchify
-from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-from models.joint_model import Seq2SeqModel
-from utils.plot_utils import plot
+import time
+
+import torch
+from nltk.translate.bleu_score import corpus_bleu
 from torch.autograd import Variable
+
+import data_reader_replicated as data_reader
+from batchify_pad import batchify
 
 ###############################################################################
 # Parse command line arguments

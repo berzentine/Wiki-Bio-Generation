@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from models.dual_attention_prevcode import DualAttention
-from models.lstm_unit import LSTMUnit
+
+from models.older_models.dual_attention_prevcode import DualAttention
+from models.older_models.lstm_unit import LSTMUnit
 
 
 class Decoder(nn.Module):

@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
-from models.decoder import Decoder
-from models.encoder import Encoder
 from torch.autograd import Variable
-import math
 
 from models.lstm_dual_attention_decoder_alignments_timestep import LSTMDualAttention
 

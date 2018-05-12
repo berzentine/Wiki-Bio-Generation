@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 
-from models.single_attention import SingleAttention
-from models.dot_attention import SoftDotAttention
+from models.older_models.single_attention import SingleAttention
 
 
 class LSTMAttention(nn.Module):

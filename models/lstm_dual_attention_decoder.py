@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 
-from models.single_attention import SingleAttention
-from models.dot_attention import SoftDotAttention
 from models.dual_attention import DualAttention
+
 
 class LSTMDualAttention(nn.Module):
     def __init__(self, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):

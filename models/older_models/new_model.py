@@ -1,10 +1,7 @@
 import torch
 import torch.nn as nn
-from models.decoder import Decoder
-from models.encoder import Encoder
-from torch.autograd import Variable
 
-from models.lstm_attention_decoder import LSTMAttention
+from models.older_models.lstm_attention_decoder import LSTMAttention
 
 
 class Seq2SeqModelNew(nn.Module):

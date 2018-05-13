@@ -268,7 +268,7 @@ def test_evaluate(data_source, data_order, test):
                 start_time = time.time()
                 #random.shuffle(data_order)
                 for batch_num in data_order:
-                    ref_seq = [[] for b in range(batchsize)]
+                    ref_seq = [[] for b in range(batchsize )]
                     if use_alignments:
                         sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
                         field_ununk , value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
@@ -305,10 +305,12 @@ def test_evaluate(data_source, data_order, test):
                             if u=='<eos>':
                                 break
                             up.write(u+" ")
+                    for b in range(batchsize):
                         for r in ref_seq[b]:
                             if r=='<eos>':
                                 break
                             rp.write(r+" ")
+                    for b in range(batchsize):
                         for g in gen_seq[b]:
                             if g=='<eos>':
                                 break

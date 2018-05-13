@@ -52,7 +52,7 @@ class Seq2SeqDualModelSOTA(nn.Module):
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
-        encoder_output, encoder_hidden = self.encoder.forward(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden, mask=value_mask)
+        encoder_output, encoder_hidden = self.encoder.forward_test(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden, mask=value_mask)
         #encoder_hidden = None
         sent = self.sent_lookup(sent)
         #encoder_hidden = (encoder_hidden[0].view(1, encoder_hidden[0].size(1), encoder_hidden[0].size(0)*encoder_hidden[0].size(2)), encoder_hidden[1].view(1, encoder_hidden[1].size(1), encoder_hidden[1].size(0)*encoder_hidden[1].size(2)))

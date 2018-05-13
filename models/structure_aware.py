@@ -84,6 +84,7 @@ class Seq2SeqDualModelSOTA(nn.Module):
         input_d = self.sent_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
         #input = torch.cat((input_d,input_z), 2)
+        encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
         encoder_output, encoder_hidden = self.encoder.forward_test(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)

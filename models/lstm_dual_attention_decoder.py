@@ -31,7 +31,8 @@ class LSTMDualAttention(nn.Module):
             outgate = F.sigmoid(outgate)
 
             cy = (forgetgate * cx) + (ingate * cellgate)
-            hy = outgate * F.tanh(cy)  # n_b x hidden_dim
+            print(forgetgate.size(), cx.size())
+	    hy = outgate * F.tanh(cy)  # n_b x hidden_dim
             h_tilde, alpha = self.attention_layer.forward(hy, ctx, input_z)
 
             return (h_tilde, cy), alpha

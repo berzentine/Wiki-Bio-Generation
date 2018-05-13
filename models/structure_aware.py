@@ -58,8 +58,10 @@ class Seq2SeqDualModelSOTA(nn.Module):
         #encoder_hidden = (encoder_hidden[0].view(1, encoder_hidden[0].size(1), encoder_hidden[0].size(0)*encoder_hidden[0].size(2)), encoder_hidden[1].view(1, encoder_hidden[1].size(1), encoder_hidden[1].size(0)*encoder_hidden[1].size(2)))
         #encoder_hidden = (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         encoder_output = torch.stack(encoder_output, dim=0)
-        encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
-        decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
+        #encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
+        #print(encoder_hidden[0].size())
+	print(encoder_output.size(), encoder_hidden[1].size())
+	decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         #decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
         return decoder_output, decoder_hidden
 

@@ -81,6 +81,7 @@ max_length = args.max_sent_length
 use_cosine = args.use_cosine
 use_alignments = args.use_alignments
 alignment_function = args.alignment_func
+structure_aware = args.structure_aware
 
 torch.manual_seed(seed)
 if torch.cuda.is_available():

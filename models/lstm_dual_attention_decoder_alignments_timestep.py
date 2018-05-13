@@ -6,7 +6,7 @@ from models.dual_attention import DualAttention
 
 
 class LSTMDualAttention(nn.Module):
-    def __init__(self, vocab_size, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True):
+    def __init__(self, vocab_size, input_size, field_rep_size, hidden_size, encoder_hidden_size, batch_first=True, dropout=0.5):
         super(LSTMDualAttention, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size

@@ -8,7 +8,7 @@ import torch
 from nltk.translate.bleu_score import corpus_bleu
 from torch.autograd import Variable
 
-import data_reader_replicated as data_reader
+import data_reader_alignments as data_reader
 from batchify_pad import batchify
 
 ###############################################################################

@@ -1,19 +1,27 @@
 #!/bin/sh
-CUDA_VISIBLE_DEVICES=0 python main_dual_alignments_timestep.py \
---epochs 500 \
---cuda \
---model_save_path ./saved_models/sota_structure_aware_debug.pth \
---plot_save_path ./saved_models/sota_structure_aware_debug.png \
---data ./data/Wiki-Data/wikipedia-biography-dataset-debug/ \
+#CUDA_VISIBLE_DEVICES=0 python main_dual_alignments_timestep.py \
+#--epochs 500 \
+#--cuda \
+#--model_save_path ./saved_models/sota_ibm2_ed_timestep_debug.pth \
+#--plot_save_path ./saved_models/sota_ibm2_ed_timestep_debug.png \
+#--data ./data/Wiki-Data/wikipedia-biography-dataset-debug/ \
+#--alignments ./data/Wiki-Data/alignments/combined_alignments_IBM2_ED.txt
 #--use_cosine False \
 #--use_alignments \
 #--use_pickle \
 #--alignments_pickle ./data/Wiki-Data/alignments/combined_alignments_p1_e1.pickle
 
 
-#CUDA_VISIBLE_DEVICES=1 \
-#python generation_dual_new_model_alignments_timestep.py  \
-#--cuda --data ./data/Wiki-Data/wikipedia-biography-dataset-debug/ \
+CUDA_VISIBLE_DEVICES=1 \
+python generation_dual_new_model_alignments_timestep.py  \
+--cuda --data ./data/Wiki-Data/wikipedia-biography-dataset-debug/ \
+--model_save_path ./saved_models/sota_structure_aware_debug.pth \
+--plot_save_path ./saved_models/sota_structure_aware_debug.png \
+--ref_path reference_sota_structure_aware_debug.txt \
+--gen_path generated_sota_structure_aware_debug.txt \
+--unk_gen_path unk_sota_structure_aware_debug.txt \
+
+
 #--model_save_path ./saved_models/sota_structure_aware_debug.pth \
 #--plot_save_path ./saved_models/sota_structure_aware_debug.png \
 #--ref_path reference_sota_structure_aware_debug.txt \

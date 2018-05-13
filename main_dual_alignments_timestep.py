@@ -49,7 +49,7 @@ parser.add_argument('--max_sent_length', type=int, default=64,help='maximum sent
 parser.add_argument('--use_cosine', type=bool, required=False, default=False, help='boolean to use cosine loss')
 parser.add_argument('--use_alignments', type=bool, required=False, default=False, help='boolean to use alignments')
 parser.add_argument('--alignment_func', type=str, default='timestep',help='setting of word embeddings to use')
-parser.add_argument('--structure_aware', type=bool, default=True,help='encoder type to use for the model')
+parser.add_argument('--structure_aware', type=bool, default=False,help='encoder type to use for the model')
 
 
 

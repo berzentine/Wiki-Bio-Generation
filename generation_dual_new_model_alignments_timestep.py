@@ -57,7 +57,7 @@ parser.add_argument('--ref_path', type=str, required=True, help='Path for storin
 parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
 parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced generated file')
 parser.add_argument('--use_alignments', type=bool, required=False, default=False, help='boolean to use alignments')
-
+parser.add_argument('--use_cosine', type=bool, required=False, default=False)
 """
 USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
 Outputs:
@@ -95,7 +95,7 @@ max_length = args.max_sent_length
 ref_path = args.ref_path
 gen_path = args.gen_path
 unk_gen_path = args.unk_gen_path
-
+use_cosine = args.use_cosine
 
 print("Load embedding")
 emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
@@ -135,12 +135,12 @@ corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, cor
              batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value], corpus.alignments)
 
 corpus.create_data_dictionaries()
-
-print("Load embedding")
-vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
-#vec = np.zeros((WORD_VOCAB_SIZE, 1000))
-EMBED_SIZE = vec.shape[1]
-print(EMBED_SIZE)
+if use_cosine:
+    print("Load embedding")
+    vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+    #vec = np.zeros((WORD_VOCAB_SIZE, 1000))
+    EMBED_SIZE = vec.shape[1]
+    print(EMBED_SIZE)
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)

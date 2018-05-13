@@ -62,6 +62,7 @@ class Seq2SeqDualModelSOTA(nn.Module):
         #encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         #decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
+        decoder_output = self.linear_out(decoder_output) 
         logsoftmax = nn.LogSoftmax(dim=2)
         decoder_output = logsoftmax(decoder_output)
         return decoder_output, decoder_hidden

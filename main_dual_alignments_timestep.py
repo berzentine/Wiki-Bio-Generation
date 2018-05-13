@@ -90,6 +90,7 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
 
 print("Load data")
+print(use_alignments)
 corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose, use_alignments)
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)

@@ -117,10 +117,11 @@ corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, cor
 corpus.create_data_dictionaries()
 
 print("Load embedding")
-vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+if use_cosine:
+    vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
 #vec = np.zeros((WORD_VOCAB_SIZE, 1000))
-EMBED_SIZE = vec.shape[1]
-print("Pre-trained embedding dimension : "+str(EMBED_SIZE))
+    EMBED_SIZE = vec.shape[1]
+    print("Pre-trained embedding dimension : "+str(EMBED_SIZE))
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)

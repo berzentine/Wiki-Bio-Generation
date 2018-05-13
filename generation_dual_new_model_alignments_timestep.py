@@ -1,0 +1,354 @@
+# should take test data as input
+# spit out the generated text and the original text
+import torchwordemb
+import math
+import time
+import argparse
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import data_reader_alignments as data_reader
+import random
+from batchify_pad import batchify, get_batch_alignments
+from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+from utils.embeddings import filter_word_embeddings
+from utils.plot_utils import plot
+from torch.autograd import Variable
+import matplotlib
+matplotlib.use('Agg')
+
+from matplotlib.font_manager import FontProperties
+from matplotlib import rcParams
+import pdb as pdb
+import matplotlib.pyplot as plt
+import six
+
+###############################################################################
+# Parse command line arguments
+###############################################################################
+
+parser = argparse.ArgumentParser(description='PyTorch Text Generation Model')
+parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
+parser.add_argument('--verbose', action='store_true', default=False, help='use Verbose')
+parser.add_argument('--limit', type=float, default=0.05,help='limit size of data')
+parser.add_argument('--seed', type=int, default=1,help='random seed')
+parser.add_argument('--batchsize', type=int, default=32,help='batchsize')
+parser.add_argument('--lr', type=int, default=0.0005,help='learning rate')
+parser.add_argument('--alignments', type=str, default='./data/Wiki-Data/alignments/alignments.txt', help='location of the alignment files')
+parser.add_argument('--alignments_pickle', type=str, default='./data/Wiki-Data/alignments/alignments.pickle', help='location of the alignment files')
+parser.add_argument('--data', type=str, default='./data/Wiki-Data/wikipedia-biography-dataset/',help='location of the data corpus')
+parser.add_argument('--vocab', type=str, default='./data/Wiki-Data/vocab/', help='location of the vocab files')
+parser.add_argument('--model_save_path', type=str, default='./saved_models/best_model.pth',help='location of the best model to save')
+parser.add_argument('--plot_save_path', type=str, default='./saved_models/loss_plot.png',help='location of the loss plot to save')
+parser.add_argument('--use_pickle', action='store_true', default=False, help='Flag whether to use pickled version of alignements or not')
+parser.add_argument('--eng_emb_path', type=str, default='../word2vec/GoogleNews-vectors-negative300.bin',help='location of the english word embeddings')
+parser.add_argument('--word_emsize', type=int, default=400,help='size of word embeddings')
+parser.add_argument('--field_emsize', type=int, default=50,help='size of field embeddings')
+parser.add_argument('--pos_emsize', type=int, default=5,help='size of position embeddings')
+parser.add_argument('--nlayers', type=int, default=1,help='number of layers')
+parser.add_argument('--nhid', type=int, default=500,help='number of hidden units per layer')
+parser.add_argument('--dropout', type=float, default=0.2,help='dropout applied to layers (0 = no dropout)')
+parser.add_argument('--clip', type=float, default=0.2,help='gradient clip')
+parser.add_argument('--log_interval', type=float, default=500,help='log interval')
+parser.add_argument('--epochs', type=int, default=100,help='epochs')
+parser.add_argument('--max_sent_length', type=int, default=64 ,help='maximum sentence length for decoding')
+parser.add_argument('--ref_path', type=str, required=True, help='Path for storing the reference file')
+parser.add_argument('--gen_path', type=str, required=True, help='Path for storing the generated file')
+parser.add_argument('--unk_gen_path', type=str, required=True, help='Path for storing the unk replaced generated file')
+parser.add_argument('--use_alignments', type=bool, required=False, default=False, help='boolean to use alignments')
+
+"""
+USAGE: python generation.py --limit=0.001 --ref_path=reference.txt --gen_path=generated.txt
+Outputs:
+reference.txt : Gold text for comparision will be stored here
+generated.txt : System generated text will be stored here
+reference.txt.tokenized : Tokenized version of reference.txt will be stored here
+generated.txt.tokenized : Tokenized version of generated.txt will be stored here
+"""
+args = parser.parse_args()
+cuda = args.cuda
+verbose = args.verbose
+limit = args.limit
+total_epochs = args.epochs
+dropout = args.dropout
+seed = args.seed
+num_layers = args.nlayers
+word_emb_size = args.word_emsize
+field_emb_size = args.field_emsize
+pos_emb_size = args.pos_emsize
+hidden_size = args.nhid
+alignment_path = args.alignments
+use_alignments = args.use_alignments
+alignment_pickle_path = args.alignments_pickle
+use_pickle = args.use_pickle
+batchsize = args.batchsize
+data_path = args.data
+vocab_path = args.vocab
+eng_emb_path = args.eng_emb_path
+plot_save_path = args.plot_save_path
+model_save_path = args.model_save_path
+lr = args.lr
+clip = args.clip
+log_interval = args.log_interval
+max_length = args.max_sent_length
+ref_path = args.ref_path
+gen_path = args.gen_path
+unk_gen_path = args.unk_gen_path
+
+
+print("Load embedding")
+emb_path = "../word2vec/GoogleNews-vectors-negative300.bin"
+#w2v_vocab, emb_vec = torchwordemb.load_word2vec_bin(emb_path)
+
+torch.manual_seed(seed)
+if torch.cuda.is_available():
+    if not cuda:
+        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
+    else:
+        torch.cuda.manual_seed(seed)
+
+print("Load data starting")
+corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose, use_alignments)
+WORD_VOCAB_SIZE = len(corpus.word_vocab)
+FIELD_VOCAB_SIZE = len(corpus.field_vocab)
+POS_VOCAB_SIZE = len(corpus.pos_vocab)
+print('='*32)
+print("Loaded data")
+
+corpus.train_value, corpus.train_value_len, corpus.train_field, corpus.train_field_len, corpus.train_ppos, corpus.train_ppos_len, \
+corpus.train_pneg, corpus.train_pneg_len, corpus.train_sent, corpus.train_sent_len , corpus.train_ununk_sent, \
+corpus.train_ununk_field, corpus.train_ununk_value, corpus.train_sent_mask, corpus.train_value_mask, corpus.train_alignments = \
+    batchify([corpus.train_value, corpus.train_field , corpus.train_ppos, corpus.train_pneg, corpus.train_sent], \
+             batchsize, verbose, [corpus.train_ununk_sent, corpus.train_ununk_field, corpus.train_ununk_value], corpus.alignments)
+
+corpus.test_value, corpus.test_value_len, corpus.test_field, corpus.test_field_len, corpus.test_ppos, corpus.test_ppos_len, \
+corpus.test_pneg, corpus.test_pneg_len, corpus.test_sent, corpus.test_sent_len, \
+corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value, corpus.test_sent_mask, corpus.test_value_mask, corpus.test_alignments = \
+    batchify([corpus.test_value, corpus.test_field , corpus.test_ppos, corpus.test_pneg, corpus.test_sent], \
+             batchsize, verbose, [corpus.test_ununk_sent, corpus.test_ununk_field, corpus.test_ununk_value], corpus.alignments)
+
+corpus.valid_value, corpus.valid_value_len, corpus.valid_field, corpus.valid_field_len, corpus.valid_ppos, corpus.valid_ppos_len, \
+corpus.valid_pneg, corpus.valid_pneg_len, corpus.valid_sent, corpus.valid_sent_len, \
+corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, corpus.valid_sent_mask, corpus.valid_value_mask, corpus.valid_alignments = \
+    batchify([corpus.valid_value, corpus.valid_field , corpus.valid_ppos, corpus.valid_pneg, corpus.valid_sent], \
+             batchsize, verbose, [corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value], corpus.alignments)
+
+corpus.create_data_dictionaries()
+
+print("Load embedding")
+vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+#vec = np.zeros((WORD_VOCAB_SIZE, 1000))
+EMBED_SIZE = vec.shape[1]
+print(EMBED_SIZE)
+
+if verbose:
+    print('='*15, 'SANITY CHECK', '='*15)
+    print('='*3, '# P +', '='*3, '# P -', '='*3, '# F', '='*3, '# V(F)', '='*3, '# Sent', '-- Should be equal across rows --')
+    print(len(corpus.test_ppos), len(corpus.test_pneg), len(corpus.test_field), len(corpus.test_value), len(corpus.test_sent))
+
+    print('='*3, '# PLen +', '='*3, '# PLen -', '='*3, '# FLen', '='*3, '# V(F)Len', '='*3, '# SentLen', '-- Should be equal across rows --')
+    print(len(corpus.test_ppos_len), len(corpus.test_pneg_len), len(corpus.test_field_len), len(corpus.test_value_len), len(corpus.test_sent_len))
+    print('='*32)
+
+
+
+
+def plot_attention(src_words, trg_words, attention_matrix, file_name=None):
+    """
+    Adapted from https://github.com/neubig/nn4nlp-code
+
+    This takes in source and target words and an attention matrix (in numpy format)
+    and prints a visualization of this to a file.
+    :param src_words: a list of words in the source
+    :param trg_words: a list of target words
+    :param attention_matrix: a two-dimensional numpy array of values between zero and one,
+     where rows correspond to source words, and columns correspond to target words
+    :param file_name: the name of the file to which we write the attention
+    """
+    fig, ax = plt.subplots()
+    #a lazy, rough, approximate way of making the image large enough
+    fig.set_figwidth(int(len(trg_words)*.6))
+
+    # put the major ticks at the middle of each cell
+    ax.set_xticks(np.arange(attention_matrix.shape[1]) + 0.5, minor=False)
+    ax.set_yticks(np.arange(attention_matrix.shape[0]) + 0.5, minor=False)
+    ax.invert_yaxis()
+
+    # label axes by words
+    ax.set_xticklabels(trg_words, minor=False)
+    ax.set_yticklabels(src_words, minor=False)
+    ax.xaxis.tick_top()
+    plt.setp(ax.get_xticklabels(), rotation=50, horizontalalignment='right')
+    # draw the heatmap
+    plt.pcolor(attention_matrix, cmap=plt.cm.Blues, vmin=0, vmax=1)
+    plt.colorbar()
+
+    if file_name != None:
+      plt.savefig(file_name, dpi=100)
+    else:
+      plt.show()
+    plt.close()
+
+
+
+
+def get_data(data_source, num, evaluation):
+    batch = data_source['sent'][num]
+    field = data_source['field'][num]
+    field_ununk = data_source['field_ununk'][num]
+    value_ununk = data_source['value_ununk'][num]
+    sent_ununk = data_source['sent_ununk'][num]
+    value = data_source['value'][num]
+    ppos = data_source['ppos'][num]
+    pneg = data_source['pneg'][num]
+    sent = batch[:, 0:batch.size(1)-1]
+    actual_sent =  batch[:, 0:batch.size(1)]
+    target = batch[:, 1:batch.size(1)]
+    sent_len = data_source['sent_len'][num]
+    value_len = data_source['value_len'][num]
+    sent_mask = data_source['sent_mask'][num]
+    value_mask = data_source['value_mask'][num]
+    if use_alignments:
+        alignments = get_batch_alignments(value, corpus.alignments)
+    #alignments = None
+    # alignments = data_source['alignments'][num]
+    # data = torch.stack(data)
+    # target = torch.stack(target)
+    if cuda:
+        sent = sent.cuda()
+        target = target.cuda()
+        field = field.cuda()
+        value = value.cuda()
+        ppos = ppos.cuda()
+        pneg = pneg.cuda()
+        value_mask = value_mask.cuda()
+        if use_alignments:
+            alignments = alignments.cuda()
+
+    sent = Variable(sent, volatile=evaluation)
+    field = Variable(field, volatile=evaluation)
+    value = Variable(value, volatile=evaluation)
+    ppos = Variable(ppos, volatile=evaluation)
+    pneg = Variable(pneg, volatile=evaluation)
+    value_mask = Variable(value_mask, volatile=evaluation)
+    if use_alignments:
+        alignments = Variable(alignments)
+    field_ununk = Variable(field_ununk, volatile=evaluation)
+    value_ununk = Variable(value_ununk, volatile=evaluation)
+    sent_ununk = Variable(sent_ununk, volatile=evaluation)
+
+    target = Variable(target)
+    if use_alignments:
+        return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk,\
+           field_ununk , value_ununk, sent_mask, value_mask, alignments
+    else:
+        return sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+               field_ununk , value_ununk, sent_mask, value_mask
+
+
+test_batches = [x for x in range(0, len(corpus.test["sent"]))]
+train_batches = [x for x in range(0, len(corpus.train["sent"]))]
+val_batches = [x for x in range(0, len(corpus.valid["sent"]))]
+
+
+
+
+
+def test_evaluate(data_source, data_order, test):
+    gold_set = []
+    pred_set = []
+    unk_set = []
+    with open(unk_gen_path, 'w') as up:
+        with open(ref_path, 'w') as rp:
+            with open(gen_path, 'w') as gp:
+                k=0
+                total_loss = total_words = 0
+                model.eval()
+                start_time = time.time()
+                #random.shuffle(data_order)
+                for batch_num in data_order:
+                    ref_seq = [[] for b in range(batchsize)]
+                    if use_alignments:
+                        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+                        field_ununk , value_ununk, sent_mask, value_mask, alignments = get_data(data_source, batch_num, True)
+
+                        gen_seq, unk_rep_seq, attn_matrix = model.generate(value, value_len, field, \
+                                                    ppos, pneg, batchsize, False, max_length, \
+                                                    corpus.word_vocab.word2idx["<sos>"],  \
+                                                    corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
+                                                    corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, \
+                                                    value_mask, actual_sent, alignments)
+                    else :
+                        sent, sent_len, ppos, pneg, field, value, value_len, target, actual_sent, sent_ununk, \
+                        field_ununk , value_ununk, sent_mask, value_mask = get_data(data_source, batch_num, True)
+                        gen_seq, unk_rep_seq = model.generate(value, value_len, field, \
+                                                                           ppos, pneg, batchsize, False, max_length, \
+                                                                           corpus.word_vocab.word2idx["<sos>"], \
+                                                                           corpus.word_vocab.word2idx["<eos>"], corpus.word_vocab, \
+                                                                           corpus.word_vocab.word2idx["UNK"], corpus.word_ununk_vocab, value_ununk, \
+                                                                           value_mask, actual_sent)
+
+
+
+                    # TODO: Make this batched in terms of getting reference sentences
+                    for b in range(batchsize):
+                        for i in range(1, len(actual_sent[b])-1):
+                            ref_seq[b].append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[b][i])])
+                    #for i in range(1, len(actual_sent[0])-1):
+                        #ref_seq.append(corpus.word_ununk_vocab.idx2word[int(sent_ununk[0][i])]) # changed here
+                        #if WORD_VOCAB_SIZE>int(sent[0][i]):
+                        #    ref_seq.append(corpus.word_vocab.idx2word[int(sent[0][i])])
+
+                    for b in range(batchsize):
+                        for u in unk_rep_seq[b]:
+                            if u=='<eos>':
+                                break
+                            up.write(u+" ")
+                        for r in ref_seq[b]:
+                            if r=='<eos>':
+                                break
+                            rp.write(r+" ")
+                        for g in gen_seq[b]:
+                            if g=='<eos>':
+                                break
+                            gp.write(g+" ")
+                        #wp.write("DOCID: "+str(index))
+                        up.write("\n\n")
+                        rp.write("\n\n")
+                        gp.write("\n\n")
+                    #wp.write("\n\n")
+                    #gold_set.append(ref_seq)
+                    #pred_set.append(gen_seq)
+                    #unk_set.append(unk_rep_seq)
+                    #print([corpus.word_vocab.idx2word[int(x)] for x in value[0]])
+                    #print(ref_seq)
+                    #print([corpus.word_vocab.idx2word[int(x)] for x in value_ununk[0]])
+                    #plot_attention(unk_rep_seq, [corpus.word_vocab.idx2word[int(x)] for x in value[0]], attn_matrix, file_name="./attn_matrices/"+str(k)+".png")
+                    k+=1
+                    #exit(0)
+    import os
+    os.system("echo \"************ Python scores ************\"")
+    #bleu = corpus_bleu(gold_set, pred_set)
+    #print("WITH UNK Bleu:"+ str(bleu))
+    #bleu = corpus_bleu(gold_set, unk_set)
+    #print("WITHOUT UNK Bleu:"+ str(bleu))
+    os.system("echo \"************ Non-tokenized scores ************\"")
+    os.system("./Scoring_scripts/multi-bleu.pl " +ref_path +" < " +gen_path +" | grep \"BLEU\"")
+    os.system("./Scoring_scripts/multi-bleu.pl " +ref_path +" < " +unk_gen_path +" | grep \"BLEU\"")
+    os.system("echo \"======================================================\"")
+    os.system("echo \"************ Tokenized scores ************\"")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +ref_path +" > "+ ref_path+".tokenized")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +gen_path +" > "+ gen_path+".tokenized")
+    os.system("./Scoring_scripts/tokenizer.pl -l en < " +unk_gen_path +" > "+ unk_gen_path+".tokenized")
+    os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+gen_path+".tokenized | grep \"BLEU\"")
+    os.system("./Scoring_scripts/multi-bleu.pl "+ ref_path+".tokenized < "+unk_gen_path+".tokenized | grep \"BLEU\"")
+    return
+
+# Load the best saved model.
+with open(model_save_path, 'rb') as f:
+    model = torch.load(f)
+# Run on test data.
+print('Evaluating model')
+print(len(test_batches),'Batches to evaluate...')
+test_evaluate(corpus.test, test_batches, test=True)

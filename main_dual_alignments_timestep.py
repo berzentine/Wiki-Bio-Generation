@@ -92,6 +92,7 @@ if torch.cuda.is_available():
 print("Load data")
 print(use_alignments)
 corpus = data_reader.Corpus(data_path, vocab_path, alignment_path, alignment_pickle_path, use_pickle, 1, limit, verbose, use_alignments)
+
 WORD_VOCAB_SIZE = len(corpus.word_vocab)
 FIELD_VOCAB_SIZE = len(corpus.field_vocab)
 POS_VOCAB_SIZE = len(corpus.pos_vocab)
@@ -118,10 +119,11 @@ corpus.valid_ununk_sent, corpus.valid_ununk_field, corpus.valid_ununk_value, cor
 corpus.create_data_dictionaries()
 
 print("Load embedding")
-vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
+if use_cosine:
+    vec = filter_word_embeddings(WORD_VOCAB_SIZE, corpus.word_vocab.idx2word, eng_emb_path)
 #vec = np.zeros((WORD_VOCAB_SIZE, 1000))
-EMBED_SIZE = vec.shape[1]
-print("Pre-trained embedding dimension : "+str(EMBED_SIZE))
+    EMBED_SIZE = vec.shape[1]
+    print("Pre-trained embedding dimension : "+str(EMBED_SIZE))
 
 if verbose:
     print('='*15, 'SANITY CHECK', '='*15)

@@ -62,7 +62,7 @@ class Seq2SeqDualModelSOTA(nn.Module):
         #encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         #decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
-        decoder_output = self.linear_out(decoder_output) 
+        decoder_output = self.linear_out(decoder_output)
         logsoftmax = nn.LogSoftmax(dim=2)
         decoder_output = logsoftmax(decoder_output)
         return decoder_output, decoder_hidden
@@ -83,8 +83,13 @@ class Seq2SeqDualModelSOTA(nn.Module):
                  ununk_dictionary, value_ununk, value_mask, sent):
         input_d = self.sent_lookup(value)
         input_z = torch.cat((self.field_lookup(field), self.ppos_lookup(ppos), self.pneg_lookup(pneg)), 2)
-        input = torch.cat((input_d,input_z), 2)
-        encoder_output, encoder_hidden = self.encoder(input, None)
+        #input = torch.cat((input_d,input_z), 2)
+        if self.cuda_var:
+            encoder_initial_hidden = encoder_initial_hidden.cuda()
+        encoder_output, encoder_hidden = self.encoder.forward_test(input_d=input_d, input_z=input_z, hidden=encoder_initial_hidden)
+        encoder_output = torch.stack(encoder_output, dim=1)
+
+        #encoder_output, encoder_hidden = self.encoder(input, None)
         gen_seq = [[] for b in range(batch_size)]
         unk_rep_seq = [[] for b in range(batch_size)]
         attention_matrix = [[] for b in range(batch_size)]
@@ -97,11 +102,11 @@ class Seq2SeqDualModelSOTA(nn.Module):
         # encoder_hidden = (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         for i in range(max_length):
-            # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
             decoder_output, prev_hidden, attn_vector = self.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
+            # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
+            #decoder_output, prev_hidden, attn_vector = self.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
             decoder_output = self.linear_out(decoder_output)
             attn_vector = torch.stack(attn_vector, dim=1)
-
             max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
             curr_input =  self.sent_lookup(max_idx) #-> (batch, 1L, embed size)
 

@@ -7,7 +7,7 @@ from older_models.encoder import Encoder
 
 class Seq2SeqDualModelSOTA(nn.Module):
     def __init__(self, sent_vocab_size, field_vocab_size, ppos_vocab_size, pneg_vocab_size, value_vocab_size, sent_embed_size, field_embed_size, \
-                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, x):
+                 value_embed_size, ppos_embed_size, pneg_embed_size, encoder_hidden_size, decoder_hidden_size, decoder_num_layer, verbose, cuda_var, x, dropout=0.5):
         super(Seq2SeqDualModelSOTA, self).__init__()
         self.encoder_hidden_size = encoder_hidden_size
         self.sent_lookup = nn.Embedding(sent_vocab_size, sent_embed_size)
@@ -22,6 +22,7 @@ class Seq2SeqDualModelSOTA(nn.Module):
         self.verbose = verbose
         self.cuda_var = cuda_var
         self.init_weights()
+        self.drop = nn.Dropout(dropout)
         self.x = nn.Parameter(torch.zeros(1), requires_grad=True)
 
     def init_weights(self):
@@ -49,6 +50,8 @@ class Seq2SeqDualModelSOTA(nn.Module):
         #input = torch.cat((input_d,input_z), 2)
         #encoder_output, encoder_hidden = self.encoder(input, None)
         #encoder_hidden = None
+        input_d = self.drop(input_d)
+        input_z = self.drop(input_z)
         encoder_initial_hidden = self.encoder.init_hidden(batch_size, self.encoder_hidden_size)
         if self.cuda_var:
             encoder_initial_hidden = encoder_initial_hidden.cuda()
@@ -62,7 +65,9 @@ class Seq2SeqDualModelSOTA(nn.Module):
         #encoder_hidden = (encoder_hidden[0].unsqueeze(0), encoder_hidden[1].unsqueeze(0))
         decoder_output, decoder_hidden, attn = self.decoder.forward(sent, encoder_hidden, input_z, encoder_output)
         #decoder_output, decoder_hidden, attn_vectors = self.decoder.forward_biased_lstm(input=sent, hidden=encoder_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
+        decoder_output = self.drop(decoder_output)
         decoder_output = self.linear_out(decoder_output)
+
         logsoftmax = nn.LogSoftmax(dim=2)
         decoder_output = logsoftmax(decoder_output)
         return decoder_output, decoder_hidden

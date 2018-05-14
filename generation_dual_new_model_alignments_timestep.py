@@ -305,6 +305,26 @@ def test_evaluate(data_source, data_order, test):
                             if u=='<eos>':
                                 break
                             up.write(u+" ")
+                    for b in range(batchsize):
+                        for r in ref_seq[b]:
+                            if r=='<eos>':
+                                break
+                            rp.write(r+" ")
+                    for b in range(batchsize):
+                        for g in gen_seq[b]:
+                            if g=='<eos>':
+                                break
+                            gp.write(g+" ")
+                        #wp.write("DOCID: "+str(index))
+                        up.write("\n\n")
+                        rp.write("\n\n")
+                        gp.write("\n\n")
+
+                    """for b in range(batchsize):
+                        for u in unk_rep_seq[b]:
+                            if u=='<eos>':
+                                break
+                            up.write(u+" ")
                         for r in ref_seq[b]:
                             if r=='<eos>':
                                 break
@@ -316,7 +336,7 @@ def test_evaluate(data_source, data_order, test):
                         #wp.write("DOCID: "+str(index))
                         up.write("\n\n")
                         rp.write("\n\n")
-                        gp.write("\n\n")
+                        gp.write("\n\n")"""
                     #wp.write("\n\n")
                     #gold_set.append(ref_seq)
                     #pred_set.append(gen_seq)

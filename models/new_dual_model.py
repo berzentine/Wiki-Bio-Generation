@@ -18,6 +18,7 @@ class Seq2SeqDualModel(nn.Module):
         self.field_rep_embed_size = field_embed_size+ppos_embed_size+pneg_embed_size
         #self.decoder = nn.LSTM(input_size=sent_embed_size, hidden_size=encoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True)
         self.encoder = nn.LSTM(input_size=sent_embed_size+self.field_rep_embed_size, hidden_size=decoder_hidden_size//2, num_layers=1, bidirectional=True, batch_first=True, dropout=dropout)
+        #self.encoder = nn.LSTM(input_size=sent_embed_size+self.field_rep_embed_size, hidden_size=decoder_hidden_size, num_layers=1, bidirectional=False, batch_first=True, dropout=dropout)
         self.decoder = LSTMDualAttention(input_size=sent_embed_size, field_rep_size=self.field_rep_embed_size, hidden_size=decoder_hidden_size, encoder_hidden_size=encoder_hidden_size, batch_first=True)
         self.linear_out = nn.Linear(encoder_hidden_size, sent_vocab_size)
         self.verbose = verbose

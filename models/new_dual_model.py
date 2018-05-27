@@ -74,7 +74,7 @@ class Seq2SeqDualModel(nn.Module):
         gen_seq = [[] for b in range(batch_size)]
         unk_rep_seq = [[] for b in range(batch_size)]
         attention_matrix = [[] for b in range(batch_size)]
-        start_symbol =  Variable(torch.LongTensor(1,1).fill_(start_symbol))
+        start_symbol =  Variable(torch.LongTensor(batch_size, 1).fill_(start_symbol))
         if self.cuda_var:
             start_symbol = start_symbol.cuda()
         curr_input = self.sent_lookup(start_symbol) # TODO: change here to look and handle batches
@@ -84,9 +84,14 @@ class Seq2SeqDualModel(nn.Module):
         prev_hidden =  (encoder_hidden[0].squeeze(0),encoder_hidden[1].squeeze(0))
         for i in range(max_length):
             # decoder_output, prev_hidden, attn_vector = model.decoder.forward_biased_lstm(input=curr_input, hidden=prev_hidden, encoder_hidden=encoder_output, input_z=input_z, mask=value_mask)
+            #print(curr_input.size())
             decoder_output, prev_hidden, attn_vector = self.decoder.forward(curr_input, prev_hidden, input_z, encoder_output)
             decoder_output = self.linear_out(decoder_output)
             attn_vector = torch.stack(attn_vector, dim=1)
+
+            #print(decoder_output.size())
+            #print(attn_vector.size())
+            #exit(0)
 
             max_val, max_idx = torch.max(decoder_output, 2) #-> (batch, 1L), (batch, 1L)
             curr_input =  self.sent_lookup(max_idx) #-> (batch, 1L, embed size)
